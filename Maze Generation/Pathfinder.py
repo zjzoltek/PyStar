@@ -16,14 +16,13 @@ class Pathfinder:
         self.clock = fpsclock
 
     def a_star(self, start, goal):
+        start.color = (0, 191, 255)
+        goal.color = (100, 255, 162)
         openlist = []
         closedlist = []
 
-        gscore = dict()
-
         current = Node(start, None, 0, self.get_distance(start, goal))
 
-        gscore[current] = 0
         openlist.append(current)
 
         while openlist:
@@ -83,14 +82,6 @@ class Pathfinder:
         l = [i for x in self.cells for i in x if i.visited]
         shuffle(l)
         return l[randint(0, len(l)-1)]
-
-    def get_point(self, x, y):
-        for i in self.cells:
-            for j in i:
-                if j.x == x and j.y == y:
-                    return j
-
-        return None
 
     @staticmethod
     def node_sorter(a, b):

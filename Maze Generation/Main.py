@@ -10,14 +10,14 @@ from Mazers import Depth_First
 FPSCLOCK = None
 DISPLAYSURF = None
 
-WINWIDTH = 200
-WINHEIGHT = 100
+WINWIDTH = 300
+WINHEIGHT = 50
 BASIC_FONT = None
 
 MAZE = Depth_First.Maze(WINWIDTH, WINHEIGHT)
 
 
-def main(random=False):
+def main():
     global FPSCLOCK, DISPLAYSURF, BASIC_FONT
 
     pygame.init()
@@ -34,12 +34,8 @@ def main(random=False):
     print "Finding path . . ."
     p = Pathfinder.Pathfinder(MAZE.cells, DISPLAYSURF, WINWIDTH, WINHEIGHT, FPSCLOCK)
 
-    if not random:
-        start = p.get_point(0, 0)
-        goal = p.get_point(150, 25)
-    else:
-        start = p.get_random_point()
-        goal = p.get_random_point()
+    start = p.get_random_point()
+    goal = p.get_random_point()
 
     print "START: (%d, %d)\nEND: (%d, %d)" % (start.x, start.y, goal.x, goal.y)
     b = time()
@@ -60,13 +56,10 @@ def handle_events():
         if event.type == KEYUP:
             if event.key == K_r:
                 main()
-            elif event.key == K_p:
-                main(True)
 
     pygame.event.pump()
 
 if __name__ == '__main__':
     print "Controls:\n"
     print "r - Remake maze and reset path\n"
-    print "p - Change start and end points to random and reset path\n"
     main()
