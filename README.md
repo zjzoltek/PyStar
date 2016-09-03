@@ -5,4 +5,5 @@ Small program that generates an intricate maze using an implementation of a rand
 Controls:
 
 r - Reset maze (and points if randomized points is toggled on)
+
 p - Toggle randomized starting and end points
