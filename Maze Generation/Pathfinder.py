@@ -8,15 +8,20 @@ import Main
 
 
 class Pathfinder:
-    def __init__(self, cells, displaysurf, width, height, fpsclock):
+    def __init__(self, cells, displaysurf, width, height, maze_type):
         self.cells = cells
         self.surf = displaysurf
         self.w = width
         self.h = height
-        self.clock = fpsclock
+
+        if maze_type == Main.REG_MAZE:
+            self.blitMethod = Depth_First.Maze.gen_surf_s
+
+        elif maze_type == Main.BOX_MAZE:
+            self.blitMethod = Depth_First.Maze.gen_surf_box_s
 
     def a_star(self, start, goal):
-        start.color = (0, 191, 255)
+        start.color = (0, 0, 255)
         goal.color = (100, 255, 162)
         openlist = []
         closedlist = []
@@ -30,21 +35,22 @@ class Pathfinder:
             current = openlist[0]
 
             if current.cell.x == goal.x and current.cell.y == goal.y:
+                path = []
                 while current.parent is not None:
+                    path.append(current)
                     current.cell.color = (0, 255, 0)
                     current = current.parent
-                self.surf.blit(Depth_First.Maze.gen_surf_s(self.cells, self.w, self.h), (0, 0))
+                self.surf.blit(self.blitMethod(self.cells, self.w, self.h), (0, 0))
                 pygame.display.update()
-                return
+                return path
 
             openlist.remove(current)
             closedlist.append(current)
             current.cell.color = (255, 0, 0)
 
             self.handle_events()
-            self.surf.blit(Depth_First.Maze.gen_surf_s(self.cells, self.w, self.h), (0, 0))
+            self.surf.blit(self.blitMethod(self.cells, self.w, self.h), (0, 0))
             pygame.display.update()
-            self.clock.tick(60)
 
             n = [x for x in current.cell.get_neighbors(self.cells) if x.visited]
 
@@ -109,7 +115,7 @@ class Pathfinder:
                 if event.key == K_r:
                     Main.main()
                 elif event.key == K_p:
-                    Main.main(True)
+                    Main.main()
         pygame.event.pump()
 
 
