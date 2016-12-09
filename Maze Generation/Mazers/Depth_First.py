@@ -12,16 +12,11 @@ class Maze:
         self.height = board_height
         self.cells = None
         self.random_colors = random_colors
-
-    def is_gen_t_alive(self):
-        return self.t.isAlive()
-
-    def generate_t(self, seed):
-        t = Thread(target=self.generate(seed))
-        t.start()
-        t.join()
+        self.box_size = None
 
     def generate_box(self, seed, box_size, diagonals):
+        print "Generating maze . . ."
+        self.box_size = box_size
         b = time()
         stack = []
         random.seed(seed)
@@ -71,9 +66,10 @@ class Maze:
                 break
 
         e = time()
-        print("Maze generated in %ds" % (e - b))
+        print("Maze generated in %fs" % (e - b))
 
     def generate(self, seed, diagonals=False):
+        print "Generating maze . . ."
         b = time()
         stack = []
         random.seed(seed)
@@ -119,7 +115,7 @@ class Maze:
                 break
 
         e = time()
-        print "Maze generated in %ds" % (e - b)
+        print "Maze generated in %fs" % (e - b)
 
     def __all_cells_visited__(self):
         for i in self.cells:
