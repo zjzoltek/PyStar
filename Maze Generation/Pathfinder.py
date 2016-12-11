@@ -52,7 +52,7 @@ class Pathfinder:
         openlist.add(current)
 
         while openlist:
-            sorted(openlist, key=lambda _node: _node.fCost)
+            openlist = set(sorted(openlist, key=lambda _node: _node.fCost))
             current = openlist.pop()
 
             if current.cell.x == goal.x and current.cell.y == goal.y:
