@@ -43,6 +43,7 @@ class Pathfinder:
         pygame.display.update()
         self.handle_events()
 
+    
     def a_star(self, start, goal):
         openlist = set()
         closedlist = set()
@@ -159,8 +160,7 @@ class Pathfinder:
         self.points = [self.get_random_point(), self.get_random_point()]
         self.points[0].color = self.START_COLOR
         self.points[1].color = self.END_COLOR
-        print "New points generated: Start: %d, %d | End: %d, %d" % \
-              (self.points[0].x, self.points[0].y, self.points[1].x, self.points[1].y)
+        print("New points generated: Start: {}, {} | End: {}, {}".format(self.points[0].x, self.points[0].y, self.points[1].x, self.points[1].y))
         self.update()
 
     def set_all_cells_to_color(self, col):
@@ -263,13 +263,12 @@ class Pathfinder:
                         self.reset_cell_colors(True)
                         if not self.points:
                             self.generate_random_start_end()
-                        print "Finding path . . ."
-                        print "Start: (%f, %f)\nEnd: (%f, %f)" % (
-                            self.points[0].x, self.points[0].y, self.points[1].x, self.points[1].y)
+                        print("Finding path . . .")
+                        print("Start: ({}, {})\nEnd: ({}, {})".format(self.points[0].x, self.points[0].y, self.points[1].x, self.points[1].y))
                         b = time()
                         self.a_star(self.points[0], self.points[1])
                         e = time()
-                        print "Done in %f seconds" % (e - b)
+                        print("Done in {} seconds".format(e - b))
                     elif event.key == K_p:
                         self.generate_random_start_end()
                     elif event.key == K_m:
@@ -354,19 +353,18 @@ class Pathfinder:
                 if event.key == K_r:
                     Main.main()
                 elif event.key == K_k:
-                    print "A-Star Halted"
+                    print("A-Star Halted")
                     self.handle_events()
                 elif event.key == K_f:
                     self.reset_cell_colors(True)
                     self.points = []
                     self.generate_random_start_end()
-                    print "Finding path . . ."
-                    print "START: (%f, %f)\nEND: (%f, %f)" % (
-                        self.points[0].x, self.points[0].y, self.points[1].x, self.points[1].y)
+                    print("Finding path . . .")
+                    print("START: ({}, {})\nEND: ({}, {})".format(self.points[0].x, self.points[0].y, self.points[1].x, self.points[1].y))
                     b = time()
                     self.a_star(self.points[0], self.points[1])
                     e = time()
-                    print "FOUND PATH IN %f SECONDS" % (e - b)
+                    print("FOUND PATH IN {} SECONDS".format(e - b))
                     self.handle_events()
 
     def update(self):

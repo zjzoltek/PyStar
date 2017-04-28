@@ -15,13 +15,13 @@ class Maze:
         self.box_size = None
 
     def generate_box(self, seed, box_size, diagonals):
-        print "Generating maze . . ."
+        print("Generating maze . . .")
         self.box_size = box_size
         b = time()
         stack = []
         random.seed(seed)
-        w = self.width / box_size[0]
-        h = self.height / box_size[1]
+        w = int(self.width / box_size[0])
+        h = int(self.height / box_size[1])
         self.cells = [[Cell(x, y, box_size)
                       for x in range(w)]
                       for y in range(h)]
@@ -66,10 +66,10 @@ class Maze:
                 break
 
         e = time()
-        print("Maze generated in %fs" % (e - b))
+        print("Maze generated in {}s".format(e - b))
 
     def generate(self, seed, diagonals=False):
-        print "Generating maze . . ."
+        print("Generating maze . . .")
         b = time()
         stack = []
         random.seed(seed)
@@ -115,7 +115,7 @@ class Maze:
                 break
 
         e = time()
-        print "Maze generated in %fs" % (e - b)
+        print("Maze generated in {}s".format(e - b))
 
     def __all_cells_visited__(self):
         for i in self.cells:
