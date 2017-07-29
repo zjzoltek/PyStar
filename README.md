@@ -4,6 +4,4 @@ Small program that generates an intricate maze using an implementation of a rand
 
 Require pygame and python 2.7.x to run
 
-Controls:
-
-Check console logging
+Check console logging for controls
