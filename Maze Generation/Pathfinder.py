@@ -261,7 +261,7 @@ class Pathfinder:
                         Main.main()
                     elif event.key == K_f:
                         self.reset_cell_colors(True)
-                        if not self.points:
+                        if not self.points or len(self.points) < 2:
                             self.generate_random_start_end()
                         print("Finding path . . .")
                         print("Start: ({}, {})\nEnd: ({}, {})".format(self.points[0].x, self.points[0].y, self.points[1].x, self.points[1].y))
