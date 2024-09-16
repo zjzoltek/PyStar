@@ -2,11 +2,7 @@ import Pathfinder
 import pygame
 
 DISPLAYSURF = None
-
 BASIC_FONT = None
-
-BOX_MAZE = 0x01
-REG_MAZE = 0x02
 
 def main():
     global DISPLAYSURF, BASIC_FONT
@@ -14,27 +10,17 @@ def main():
     print('\n')
 
     win_w, win_h = get_windims()
-
-    w, h = get_boxdims(win_w, win_h)
-
-    diagonals = input("Would you like to give AStar the ability to move diagonally? Y/N (Default No) =>")
-    if diagonals.lower() in ("y", "yes"):
-        diagonals = True
-    else:
-        diagonals = False
+    box_w, box_h = get_boxdims(win_w, win_h)
+    diagonals = get_diagonals()
 
     pygame.init()
-
     BASIC_FONT = pygame.font.Font(pygame.font.get_default_font(), 18)
     DISPLAYSURF = pygame.display.set_mode((win_w, win_h))
-    if w == 1 and h == 1:
-        maze_type = REG_MAZE
-    else:
-        maze_type = BOX_MAZE
+    Pathfinder.Pathfinder({"win_dims": (win_w, win_h), "box_dims": (box_w, box_h), "diagonal": diagonals}, DISPLAYSURF, win_w, win_h)
 
-    args = {"win_dims": (win_w, win_h), "box_dims": (w, h), "diagonal": diagonals, "type": maze_type}
-    Pathfinder.Pathfinder(args, DISPLAYSURF, win_w, win_h)
-
+def get_diagonals():
+    diagonals = input("Would you like to give AStar the ability to move diagonally? Y/N (Default No) =>")
+    return diagonals.lower() in ("y", "yes")
 
 def get_windims():
     while True:
@@ -76,7 +62,7 @@ if __name__ == '__main__':
     print("m - Re-Generate Maze")
     print("f - Find path with current maze (start and end points will be generated if not done so already)")
     print("p - Generate random start and end points")
-    print("z - Clear maze colors and reset start and end points")
+    print("c - Clear maze colors and reset start and end points")
     print("x - Clear path, but not start and end colors")
     print("k (during path find) - Stop pathfinding")
     print("r - Re-prompt for dimensions and diagonal allowance")
