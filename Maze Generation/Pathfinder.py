@@ -90,7 +90,6 @@ class Pathfinder:
                     path.append(current)
                     current = current.parent
 
-                self.update_display()
                 return path
 
             if current.cell != start:
@@ -101,8 +100,9 @@ class Pathfinder:
                 hcost = self.get_distance(cell, goal)
                 openlist.append(Node(cell, current, gcost, hcost))
 
+            pygame.event.pump()
             self.update_display()
-            
+
         return None
 
     def get_random_point(self):
@@ -126,7 +126,7 @@ class Pathfinder:
     def reset_maze_colors(self, include_start_end=False):
         for y in self.maze.cells:
             for x in y:
-                if x != Cell.State.NOT_VISITED and x not in self.points:
+                if x.state != Cell.State.NOT_VISITED and x not in self.points:
                     x.state = Cell.State.VISITED
         
         if include_start_end:

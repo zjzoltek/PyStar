@@ -136,6 +136,7 @@ class Cell:
 
         return n
 
+    # this is all kinds of fucked up; neighbors for a-star is different from neighbors for depth-first
     def has_visited_neighbors(self, cells):
         if len([x for x in self.get_neighbors(cells) if x.state == Cell.State.VISITED]) > 1:
             return True
