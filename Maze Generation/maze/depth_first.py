@@ -1,8 +1,9 @@
 import random
-from enum import Enum
+import time
 from time import time
 
 import pygame.sprite
+from maze.cell import Cell
 
 
 class Maze:
@@ -32,10 +33,10 @@ class Maze:
 
         print("Maze generated in {}s".format(end_time - start_time))
 
-    def visit_all_cells(self):
+    def clear(self):
         for column in self.cells:
-            for row in column:
-                row.state = Cell.State.VISITED
+            for cell in column:
+                cell.mark_as_open()
 
     def __populate_cells__(self):
         unvisited_cells = set([cell for column in self.cells for cell in column])
@@ -43,11 +44,11 @@ class Maze:
         current = self.cells[0][0]
 
         while unvisited_cells:
-            current.state = Cell.State.VISITED
+            current.mark_as_open()
             if current in unvisited_cells:
                 unvisited_cells.remove(current)
 
-            neighbors = current.get_unvisited_neighbors(self.cells)
+            neighbors = current.get_unvisited_neighbors()
             if len(neighbors) > 0:
                 stack.append(current)
                 current = neighbors[random.randint(0, len(neighbors) - 1)]
@@ -78,85 +79,12 @@ class Maze:
                 else:
                     n = [u, d, l, r]
 
-                self.cells[i][j].neighbors = [x for x in n if x is not None]
+                self.cells[i][j].neighbors = [self.cells[coords[0]][coords[1]] for coords in n if coords is not None]
 
     def __all_cells_visited__(self):
         for i in self.cells:
             for j in i:
-                if j.state == Cell.State.NOT_VISITED:
+                if j.state == Cell.State.WALL:
                     return False
 
         return True
-
-class Cell:
-    class State(Enum):
-        START = 1
-        END = 2
-        SEARCHED = 3
-        PATH = 4
-        VISITED = 5
-        NOT_VISITED = 6
-
-    class Color(Enum):
-        START = (0, 0, 255)
-        END = (255, 20, 147)
-        SEARCHED = (255, 0, 0)
-        PATH = (0, 255, 0)
-        VISITED = (255, 255, 255)
-        NOT_VISITED = (0, 0, 0)
-    
-    def __init__(self, x, y, dimensions):
-        self.neighbors = []
-        self.x = x
-        self.y = y
-        self.state = Cell.State.NOT_VISITED
-        self.dimensions = dimensions
-
-    def get_color(self):
-        match self.state:
-            case Cell.State.START:
-                return Cell.Color.START.value
-            case Cell.State.END:
-                return Cell.Color.END.value
-            case Cell.State.SEARCHED:
-                return Cell.Color.SEARCHED.value
-            case Cell.State.PATH:
-                return Cell.Color.PATH.value
-            case Cell.State.VISITED:
-                return Cell.Color.VISITED.value
-            case Cell.State.NOT_VISITED:
-                return Cell.Color.NOT_VISITED.value
-            case _:
-                raise ValueError('Invalid state')
-    
-    def get_neighbors(self, cells):
-        n = []
-        for i in self.neighbors:
-            n.append(cells[i[0]][i[1]])
-
-        return n
-
-    # this is all kinds of fucked up; neighbors for a-star is different from neighbors for depth-first
-    def has_visited_neighbors(self, cells):
-        if len([x for x in self.get_neighbors(cells) if x.state == Cell.State.VISITED]) > 1:
-            return True
-
-    def get_unvisited_neighbors(self, cells):
-        return [x for x in self.get_neighbors(cells) if x.state == Cell.State.NOT_VISITED and not x.has_visited_neighbors(cells)]
-    
-    def __repr__(self):
-        return "Cell(%s, %s)" % (self.x, self.y)
-    
-    def __eq__(self, other):
-        if not isinstance(other, Cell):
-            return False
-        
-        return self.x == other.x and self.y == other.y
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-    
-    def __hash__(self):
-        return hash(self.__repr__())
-
-

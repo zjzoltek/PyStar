@@ -1,20 +1,17 @@
+import heapq
 import sys
 from enum import Enum
 from math import sqrt
 from random import randint, seed, shuffle
 from time import time
 
-import Main
 import pygame
-from Mazers.Depth_First import Cell, Maze
+from maze.cell import Cell
+from maze.depth_first import Maze
 from pygame.locals import *
 
 
-class Pathfinder:
-    class AStarState(Enum):
-        CONTINUE = 1
-        NO_PATH = 2
-        
+class Path_Finder:
     class Mode(Enum):
         MANUAL = 1
         AUTO = 2
@@ -61,7 +58,7 @@ class Pathfinder:
         self.maze = Maze(width, height)
         self.points = []
         self.pressed_keys = {}
-        self.mode = Pathfinder.Mode.AUTO
+        self.mode = self.Mode.AUTO
         self.blitMethod = Maze.gen_surf_box
         self.highlighted_cell = [0, 0]
 
@@ -69,36 +66,38 @@ class Pathfinder:
         self.regenerate_maze()
         self.handle_events()
     
-    def a_star(self, start, goal):
-        openlist = set()
+    def a_star(self, start: Cell, goal: Cell) -> None:
+        openlist = []
         closedlist = set()
 
         current = Node(start, None, 0, self.get_distance(start, goal))
-        openlist.add(current)
+        heapq.heappush(openlist, current)
 
         while openlist:
-            openlist = sorted(openlist, key=lambda node: node.fCost, reverse=True)
-            current = openlist.pop()
-            closedlist.add(current)
-
+            current = heapq.heappop(openlist)
+            closedlist.add(current.cell)
+            
             if current.cell.x == goal.x and current.cell.y == goal.y:
                 path = []
                 while current.parent is not None:
-                    if current.cell.state not in (Cell.State.START, Cell.State.END):
-                        current.cell.state = Cell.State.PATH
+                    if not current.cell.is_terminator():
+                        current.cell.mark_as_route()
 
                     path.append(current)
                     current = current.parent
-
                 return path
 
-            if current.cell != start:
-                current.cell.state = Cell.State.SEARCHED
+            if not current.cell.is_terminator():
+                current.cell.mark_as_searched()
 
-            for cell in [cell for cell in current.cell.get_neighbors(self.maze.cells) if cell.state == Cell.State.VISITED and cell not in closedlist]:
+            for cell in current.cell.neighbors:
+                if not cell.is_transversible() or cell in closedlist:
+                    continue
+                    
                 gcost = current.gCost + self.get_distance(current.cell, cell)
                 hcost = self.get_distance(cell, goal)
-                openlist.append(Node(cell, current, gcost, hcost))
+                n = Node(cell, current, gcost, hcost)
+                heapq.heappush(openlist, n)
 
             pygame.event.pump()
             self.update_display()
@@ -106,28 +105,28 @@ class Pathfinder:
         return None
 
     def get_random_point(self):
-        all_cells = [row for column in self.maze.cells for row in column if row.state == Cell.State.VISITED]
+        all_cells = [row for column in self.maze.cells for row in column if row.is_transversible()]
         shuffle(all_cells)
         return all_cells[randint(0, len(all_cells)-1)]
 
     def generate_random_start_end(self):
         self.reset_start_end()
         self.points = [self.get_random_point(), self.get_random_point()]
-        self.points[0].state = Cell.State.START
-        self.points[1].state = Cell.State.END
+        self.points[0].mark_as_start()
+        self.points[1].mark_as_end()
         print("New points generated: Start: {}, {} | End: {}, {}".format(self.points[0].x, self.points[0].y, self.points[1].x, self.points[1].y))
 
     def reset_start_end(self):
         for p in self.points:
-            p.state = Cell.State.VISITED
+            p.mark_as_open()
         
         self.points.clear()
     
     def reset_maze_colors(self, include_start_end=False):
-        for y in self.maze.cells:
-            for x in y:
-                if x.state != Cell.State.NOT_VISITED and x not in self.points:
-                    x.state = Cell.State.VISITED
+        for column in self.maze.cells:
+            for cell in column:
+                if cell.is_openable():
+                    cell.mark_as_open()
         
         if include_start_end:
             self.reset_start_end()
@@ -162,14 +161,11 @@ class Pathfinder:
 
     def handle_key_events(self):
         if K_z in self.pressed_keys:
-            self.mode = Pathfinder.Mode.AUTO if self.mode == Pathfinder.Mode.MANUAL else Pathfinder.Mode.MANUAL
-            if self.mode == Pathfinder.Mode.AUTO:
+            self.mode = self.Mode.AUTO if self.mode == self.Mode.MANUAL else self.Mode.MANUAL
+            if self.mode == self.Mode.AUTO:
                 self.regenerate_maze()
             else:
-                self.maze.visit_all_cells()
-
-        if K_r in self.pressed_keys:
-            Main.main()
+                self.maze.clear()
 
         if K_f in self.pressed_keys:
             self.reset_maze_colors()
@@ -205,9 +201,12 @@ class Pathfinder:
     def progress_points(self, cell):
         if len(self.points) == 2:
             self.reset_start_end()
-        elif cell.state == Cell.State.VISITED:
-                cell.state = Cell.State.START if not self.points else Cell.State.END
-                self.points.append(cell)
+        elif cell.state.is_transversible() and not cell.is_terminator():
+            if not self.points:
+                cell.mark_as_start()
+            else:
+                cell.mark_as_end()
+            self.points.append(cell)
 
     def compute_current_highlighted_cell(self):
         if K_d in self.pressed_keys or K_RIGHT in self.pressed_keys:
@@ -223,19 +222,19 @@ class Pathfinder:
                                             self.highlighted_cell[1], self.w - self.main_args['box_dims'][0],
                                             self.h - self.main_args['box_dims'][1], 0, 0)
         
-        if K_v in self.pressed_keys and self.mode == Pathfinder.Mode.MANUAL:
+        if K_v in self.pressed_keys and self.mode == self.Mode.MANUAL:
             hcell = self.get_cell(self.highlighted_cell[0], self.highlighted_cell[1])
-            hcell.state = Cell.State.NOT_VISITED
+            hcell.mark_as_wall()
             hcell.color = (0, 0, 0)
 
-        if self.__mouse_button_string__(3) in self.pressed_keys and self.mode == Pathfinder.Mode.MANUAL:
+        if self.__mouse_button_string__(3) in self.pressed_keys and self.mode == self.Mode.MANUAL:
             hcell = self.get_cell(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1])
-            hcell.state = Cell.State.NOT_VISITED
+            hcell.mark_as_wall()
             hcell.color = (0, 0, 0)
 
-        if K_b in self.pressed_keys and self.mode == Pathfinder.Mode.MANUAL:
+        if K_b in self.pressed_keys and self.mode == self.Mode.MANUAL:
             hcell = self.get_cell(self.highlighted_cell[0], self.highlighted_cell[1])
-            hcell.state = Cell.State.VISITED
+            hcell.state.mark_as_open()
             hcell.color = (255, 255, 255)
 
         pygame.draw.rect(self.surf, (0, 255, 0),
@@ -254,3 +253,27 @@ class Node:
         self.gCost = gcost
         self.hCost = hcost
         self.fCost = gcost + hcost
+    
+    def __repr__(self):
+        return repr(self.cell)
+    
+    def __lt__(self, other):
+        return self.fCost < other.fCost
+    
+    def __gt__(self, other):
+        return self.fCost > other.fCost
+    
+    def __le__(self, other):
+        return self.fCost <= other.fCost
+    
+    def __ge__(self, other):
+        return self.fCost >= other.fCost
+    
+    def __eq__(self, other):
+        return self.fCost == other.fCost
+    
+    def __ne__(self, other):
+        return not self == other
+    
+    def __hash__(self):
+        return hash(self.__repr__())
