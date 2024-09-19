@@ -14,7 +14,8 @@ class Maze:
         for column in cells:
             for row in column:
                 pygame.draw.rect(surf, row.get_color(), (row.x * row.dimensions[0], row.y*row.dimensions[1], row.dimensions[0], row.dimensions[1]))
-
+                row.reset_dirty_bit()
+                
         return surf
 
     def __init__(self, board_width, board_height):
@@ -84,7 +85,7 @@ class Maze:
     def __all_cells_visited__(self):
         for i in self.cells:
             for j in i:
-                if j.state == Cell.State.WALL:
+                if j.__state == Cell.State.WALL:
                     return False
 
         return True

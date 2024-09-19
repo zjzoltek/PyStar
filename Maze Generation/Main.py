@@ -15,7 +15,7 @@ def main():
 
     pygame.init()
     BASIC_FONT = pygame.font.Font(pygame.font.get_default_font(), 18)
-    DISPLAYSURF = pygame.display.set_mode((win_w, win_h))
+    DISPLAYSURF = pygame.display.set_mode((win_w, win_h), pygame.HWSURFACE|pygame.DOUBLEBUF)
     Path_Finder({"win_dims": (win_w, win_h), "box_dims": (box_w, box_h), "diagonal": diagonals}, DISPLAYSURF, win_w, win_h)
 
 def get_diagonals():

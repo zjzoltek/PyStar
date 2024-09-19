@@ -69,7 +69,7 @@ class Path_Finder:
     def a_star(self, start: Cell, goal: Cell) -> None:
         openlist = []
         closedlist = set()
-
+        time_outside_astar = 0
         current = Node(start, None, 0, self.get_distance(start, goal))
         heapq.heappush(openlist, current)
 
@@ -78,6 +78,7 @@ class Path_Finder:
             closedlist.add(current.cell)
             
             if current.cell.x == goal.x and current.cell.y == goal.y:
+                print(f'Time outside a-star: {time_outside_astar}')
                 path = []
                 while current.parent is not None:
                     if not current.cell.is_terminator():
@@ -99,9 +100,11 @@ class Path_Finder:
                 n = Node(cell, current, gcost, hcost)
                 heapq.heappush(openlist, n)
 
+            a = time()
             pygame.event.pump()
             self.update_display()
-
+            b = time()
+            time_outside_astar += b - a
         return None
 
     def get_random_point(self):
@@ -201,7 +204,7 @@ class Path_Finder:
     def progress_points(self, cell):
         if len(self.points) == 2:
             self.reset_start_end()
-        elif cell.state.is_transversible() and not cell.is_terminator():
+        elif cell.is_transversible() and not cell.is_terminator():
             if not self.points:
                 cell.mark_as_start()
             else:
@@ -238,11 +241,13 @@ class Path_Finder:
             hcell.color = (255, 255, 255)
 
         pygame.draw.rect(self.surf, (0, 255, 0),
-                            (self.highlighted_cell[0], self.highlighted_cell[1], self.main_args['box_dims'][0], self.main_args['box_dims'][1]))
+                            (self.highlighted_cell[0] *  self.main_args['box_dims'][0], \
+                                self.highlighted_cell[1] *  self.main_args['box_dims'][1], \
+                                    self.main_args['box_dims'][0], self.main_args['box_dims'][1]))
         
     def update_display(self):
         self.surf.blit(self.blitMethod(self.maze.cells, self.w, self.h), (0, 0))
-        pygame.display.update()
+        pygame.display.flip()
         self.fps.tick(self.FPS)
 
 class Node:
