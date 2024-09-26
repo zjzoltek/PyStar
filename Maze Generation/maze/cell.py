@@ -27,17 +27,17 @@ class Cell:
         OPEN = (255, 255, 255)
         WALL = (0, 0, 0)
     
-    def __init__(self, x, y, dimensions):
+    def __init__(self, x, y, dimensions, on_state_change=None):
         self.neighbors = []
         self.x = x
         self.y = y
-        self.__state = Cell.State.WALL
-        self.__needs_write = True
         self.dimensions = dimensions
         self.neighors = None
+        self._state = Cell.State.WALL
+        self._on_state_change = on_state_change
 
     def get_color(self):
-        match self.__state:
+        match self._state:
             case Cell.State.START:
                 return Cell.Color.START.value
             case Cell.State.END:
@@ -54,50 +54,43 @@ class Cell:
                 raise ValueError('Invalid state')
     
     def has_visited_neighbors(self):
-        if len([cell for cell in self.neighbors if cell.__state == Cell.State.OPEN]) > 1:
+        if len([cell for cell in self.neighbors if cell._state == Cell.State.OPEN]) > 1:
             return True
 
     def is_terminator(self):
-        return self.__state.is_terminator()
+        return self._state.is_terminator()
     
     def is_transversible(self):
-        return self.__state.is_transversible()
+        return self._state.is_transversible()
     
     def is_openable(self):
-        return self.__state.is_openable()
+        return self._state.is_openable()
     
     def get_unvisited_neighbors(self):
-        return [cell for cell in self.neighbors if cell.__state == Cell.State.WALL and not cell.has_visited_neighbors()]
+        return [cell for cell in self.neighbors if cell._state == Cell.State.WALL and not cell.has_visited_neighbors()]
     
     def mark_as_start(self):
-        self.__set_state(Cell.State.START)
+        self._set_state(Cell.State.START)
         
     def mark_as_end(self):
-        self.__set_state(Cell.State.END)
+        self._set_state(Cell.State.END)
         
     def mark_as_searched(self):
-        self.__set_state(Cell.State.SEARCHED)
+        self._set_state(Cell.State.SEARCHED)
         
     def mark_as_route(self):
-        self.__set_state(Cell.State.ROUTE)
+        self._set_state(Cell.State.ROUTE)
     
     def mark_as_open(self):
-        self.__set_state(Cell.State.OPEN)
+        self._set_state(Cell.State.OPEN)
     
     def mark_as_wall(self):
-        self.__set_state(Cell.State.WALL)
+        self._set_state(Cell.State.WALL)
     
-    def is_dirty(self):
-        return self.__needs_write
-    
-    def reset_dirty_bit(self):
-        self.__needs_write = False
-        
-    def __set_state(self, state):
-        if (state != self.__state):
-            self.__needs_write = True
-            
-        self.__state = state
+    def _set_state(self, state):
+        if self._state != state and self._on_state_change != None:
+            self._on_state_change(state)
+        self._state = state
         
     def __repr__(self):
         return "Cell(%s, %s)" % (self.x, self.y)

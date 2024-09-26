@@ -1,4 +1,5 @@
 import pygame
+from colorama import just_fix_windows_console
 from path_finder import Path_Finder
 
 DISPLAYSURF = None
@@ -6,7 +7,8 @@ BASIC_FONT = None
 
 def main():
     global DISPLAYSURF, BASIC_FONT
-
+    just_fix_windows_console()
+    
     print('\n')
 
     win_w, win_h = get_windims()
@@ -16,7 +18,7 @@ def main():
     pygame.init()
     BASIC_FONT = pygame.font.Font(pygame.font.get_default_font(), 18)
     DISPLAYSURF = pygame.display.set_mode((win_w, win_h), pygame.HWSURFACE|pygame.DOUBLEBUF)
-    Path_Finder({"win_dims": (win_w, win_h), "box_dims": (box_w, box_h), "diagonal": diagonals}, DISPLAYSURF, win_w, win_h)
+    Path_Finder(DISPLAYSURF, (win_w, win_h), (box_w, box_h), diagonals)
 
 def get_diagonals():
     diagonals = input("Would you like to give AStar the ability to move diagonally? Y/N (Default No) =>")

@@ -7,42 +7,58 @@ from maze.cell import Cell
 
 
 class Maze:
-    @staticmethod
-    def gen_surf_box(cells, width, height):
-        surf = pygame.Surface((width, height))
-
-        for column in cells:
-            for row in column:
-                pygame.draw.rect(surf, row.get_color(), (row.x * row.dimensions[0], row.y*row.dimensions[1], row.dimensions[0], row.dimensions[1]))
-                row.reset_dirty_bit()
-                
-        return surf
-
     def __init__(self, board_width, board_height):
         self.size = board_width * board_height
         self.width = board_width
         self.height = board_height
-        self.cells = None
-
+        self._cells = []
+        self._needs_write = False
+        
     def generate(self, box_size, diagonals):
         print("Generating maze . . .")
 
         start_time = time()
-        self.__generate_cells__(box_size, diagonals)
-        self.__populate_cells__()
+        self._generate_cells(box_size, diagonals)
+        self._populate_cells()
         end_time = time()
 
         print("Maze generated in {}s".format(end_time - start_time))
 
-    def clear(self):
-        for column in self.cells:
-            for cell in column:
-                cell.mark_as_open()
+    def draw_surf(self, width, height):
+        if not self._needs_write:
+            return
 
-    def __populate_cells__(self):
-        unvisited_cells = set([cell for column in self.cells for cell in column])
+        surf = pygame.Surface((width, height))
+        for column in self._cells:
+            for cell in column:
+                pygame.draw.rect(surf, cell.get_color(), (cell.x * cell.dimensions[0], cell.y*cell.dimensions[1], cell.dimensions[0], cell.dimensions[1]))
+        
+        self._needs_write = False
+        
+        return surf
+
+    def reopen_cells(self, openable_only=True):
+        for column in self._cells:
+            for cell in column:
+                if cell.is_openable() or not openable_only:
+                    cell.mark_as_open()
+         
+    def get_random_transversible_point(self):
+        all_cells = [row for column in self._cells for row in column if row.is_transversible()]
+        random.shuffle(all_cells)
+        return all_cells[random.randint(0, len(all_cells)-1)]
+       
+    def get_cell(self, x, y):
+        for array in self._cells:
+            for cell in array:
+                if cell.x == int((x / self.width)) \
+                        and cell.y == int((y / self.height)):
+                    return cell
+                
+    def _populate_cells(self):
+        unvisited_cells = set([cell for column in self._cells for cell in column])
         stack = []
-        current = self.cells[0][0]
+        current = self._cells[0][0]
 
         while unvisited_cells:
             current.mark_as_open()
@@ -58,12 +74,13 @@ class Maze:
             else:
                 break
 
-    def __generate_cells__(self, box_size, diagonals):
+    def _generate_cells(self, box_size, diagonals):
         w = int(self.width / box_size[0])
         h = int(self.height / box_size[1])
-        self.cells = [[Cell(x, y, box_size)
+        self._cells = [[Cell(x, y, box_size, self._on_cell_state_change)
                       for x in range(w)]
                       for y in range(h)]
+        
         for i in range(h):
             for j in range(w):
                 u = (i - 1, j) if 0 < i - 1 < h else None
@@ -80,12 +97,7 @@ class Maze:
                 else:
                     n = [u, d, l, r]
 
-                self.cells[i][j].neighbors = [self.cells[coords[0]][coords[1]] for coords in n if coords is not None]
-
-    def __all_cells_visited__(self):
-        for i in self.cells:
-            for j in i:
-                if j.__state == Cell.State.WALL:
-                    return False
-
-        return True
+                self._cells[i][j].neighbors = [self._cells[coords[0]][coords[1]] for coords in n if coords is not None]
+    
+    def _on_cell_state_change(self, _):
+        self.needs_write = True
