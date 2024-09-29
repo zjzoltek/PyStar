@@ -27,14 +27,14 @@ class Cell:
         OPEN = (255, 255, 255)
         WALL = (0, 0, 0)
     
-    def __init__(self, x, y, dimensions, on_state_change=None):
+    def __init__(self, x, y, dimensions, maze):
         self.neighbors = []
         self.x = x
         self.y = y
         self.dimensions = dimensions
         self.neighors = None
         self._state = Cell.State.WALL
-        self._on_state_change = on_state_change
+        self._maze = maze
 
     def get_color(self):
         match self._state:
@@ -54,8 +54,7 @@ class Cell:
                 raise ValueError('Invalid state')
     
     def has_visited_neighbors(self):
-        if len([cell for cell in self.neighbors if cell._state == Cell.State.OPEN]) > 1:
-            return True
+        return len([cell for cell in self.neighbors if cell._state == Cell.State.OPEN]) > 1
 
     def is_terminator(self):
         return self._state.is_terminator()
@@ -88,8 +87,8 @@ class Cell:
         self._set_state(Cell.State.WALL)
     
     def _set_state(self, state):
-        if self._state != state and self._on_state_change != None:
-            self._on_state_change(state)
+        if self._state != state:
+            self._maze.on_cell_state_change()
         self._state = state
         
     def __repr__(self):

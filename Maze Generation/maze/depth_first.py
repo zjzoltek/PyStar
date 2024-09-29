@@ -44,17 +44,20 @@ class Maze:
                     cell.mark_as_open()
          
     def get_random_transversible_point(self):
-        all_cells = [row for column in self._cells for row in column if row.is_transversible()]
+        all_cells = [row for row in self._cells for cell in row if cell.is_transversible()]
         random.shuffle(all_cells)
-        return all_cells[random.randint(0, len(all_cells)-1)]
+        return random.choice(all_cells)
        
     def get_cell(self, x, y):
-        for array in self._cells:
-            for cell in array:
-                if cell.x == int((x / self.width)) \
-                        and cell.y == int((y / self.height)):
+        for row in self._cells:
+            for cell in row:
+                if cell.x == int((x / self.height)) \
+                        and cell.y == int((y / self.width)):
                     return cell
                 
+    def on_cell_state_change(self):
+        self._needs_write = True
+       
     def _populate_cells(self):
         unvisited_cells = set([cell for column in self._cells for cell in column])
         stack = []
@@ -68,7 +71,7 @@ class Maze:
             neighbors = current.get_unvisited_neighbors()
             if len(neighbors) > 0:
                 stack.append(current)
-                current = neighbors[random.randint(0, len(neighbors) - 1)]
+                current = random.choice(neighbors)
             elif len(stack) > 0:
                 current = stack.pop()
             else:
@@ -77,27 +80,27 @@ class Maze:
     def _generate_cells(self, box_size, diagonals):
         w = int(self.width / box_size[0])
         h = int(self.height / box_size[1])
-        self._cells = [[Cell(x, y, box_size, self._on_cell_state_change)
-                      for x in range(w)]
-                      for y in range(h)]
+        self._cells = [[Cell(row, column, box_size, self)
+                      for row in range(h)]
+                      for column in range(w)]
         
-        for i in range(h):
-            for j in range(w):
-                u = (i - 1, j) if 0 < i - 1 < h else None
-                d = (i + 1, j) if 0 < i + 1 < h else None
-                r = (i, j + 1) if 0 < j + 1 < w else None
-                l = (i, j - 1) if 0 < j - 1 < w else None
+        for row in range(h):
+            for column in range(w):
+                u = (row - 1, column) if 0 <= row - 1 < h else None
+                d = (row + 1, column) if 0 <= row + 1 < h else None
+                r = (row, column + 1) if 0 <= column + 1 < w else None
+                l = (row, column - 1) if 0 <= column - 1 < w else None
 
                 if diagonals:
-                    u_r = (i - 1, j + 1) if 0 < i - 1 < h and 0 < j + 1 < w else None
-                    d_r = (i + 1, j + 1) if 0 < i + 1 < h and 0 < j + 1 < w else None
-                    u_l = (i - 1, j - 1) if 0 < i - 1 < h and 0 < j - 1 < w else None
-                    d_l = (i + 1, j - 1) if 0 < i + 1 < h and 0 < j - 1 < w else None
+                    u_r = (row - 1, column + 1) if 0 <= row - 1 < h and 0 <= column + 1 < w else None
+                    d_r = (row + 1, column + 1) if 0 <= row + 1 < h and 0 <= column + 1 < w else None
+                    u_l = (row - 1, column - 1) if 0 <= row - 1 < h and 0 <= column - 1 < w else None
+                    d_l = (row + 1, column - 1) if 0 <= row + 1 < h and 0 <= column - 1 < w else None
                     n = [u, d, l, r, u_r, d_r, u_l, d_l]
                 else:
                     n = [u, d, l, r]
 
-                self._cells[i][j].neighbors = [self._cells[coords[0]][coords[1]] for coords in n if coords is not None]
-    
-    def _on_cell_state_change(self, _):
-        self.needs_write = True
+                self._cells[row][column].neighbors = [self._cells[coords[0]][coords[1]] for coords in n if coords is not None]
+
+        
+        

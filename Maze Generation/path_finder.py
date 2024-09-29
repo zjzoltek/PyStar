@@ -46,7 +46,7 @@ class Path_Finder:
         return pair
     
     @staticmethod
-    def __mouse_button_string__(mouse_button):
+    def _mouse_button_str(mouse_button):
         return 'button{}'.format(mouse_button)
     
     def __init__(self, surf, win_dims, box_dims, diagonals):
@@ -106,8 +106,7 @@ class Path_Finder:
         self.points = [self.maze.get_random_transversible_point(), self.maze.get_random_transversible_point()]
         self.points[0].mark_as_start()
         self.points[1].mark_as_end()
-        print(f"New points generated: Start: {self.points[0].x}, {self.points[0].y} \
-            | End: {self.points[1].x}, {self.points[1].y}")
+        print(f'New points generated: Start: {self.points[0].x}, {self.points[0].y} | End: {self.points[1].x}, {self.points[1].y}')
 
     def _reset_start_end(self):
         for p in self.points:
@@ -132,7 +131,7 @@ class Path_Finder:
                     sys.exit(0)
 
                 if event.type == MOUSEBUTTONDOWN:
-                    self.pressed_keys[self.__mouse_button_string__(event.button)] = event
+                    self.pressed_keys[self._mouse_button_str(event.button)] = event
                 if event.type == KEYDOWN:
                     self.pressed_keys[event.key] = event
 
@@ -159,7 +158,7 @@ class Path_Finder:
             start_time = time()
             self._find_path(self.points[0], self.points[1])
             end_time = time()
-            print("Done in {} seconds".format(end_time - start_time))
+            print('Done in {} seconds'.format(end_time - start_time))
         
         if K_p in self.pressed_keys:
             self._generate_random_start_end()
@@ -177,8 +176,8 @@ class Path_Finder:
             self._progress_points(self.maze.get_cell(self.highlighted_cell[0], self.highlighted_cell[1]))
 
     def _handle_mouse_events(self): 
-        if self.__mouse_button_string__(1) in self.pressed_keys:
-            event = self.pressed_keys[self.__mouse_button_string__(1)]
+        if self._mouse_button_str(1) in self.pressed_keys:
+            event = self.pressed_keys[self._mouse_button_str(1)]
             self._progress_points(self.maze.get_cell(event.pos[0], event.pos[1]))
 
     def _progress_points(self, cell):
@@ -209,7 +208,7 @@ class Path_Finder:
             hcell = self.maze.get_cell(self.highlighted_cell[0], self.highlighted_cell[1])
             hcell.mark_as_wall()
 
-        if self.__mouse_button_string__(3) in self.pressed_keys and self.mode == self.Mode.MANUAL:
+        if self._mouse_button_str(3) in self.pressed_keys and self.mode == self.Mode.MANUAL:
             hcell = self.maze.get_cell(pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1])
             hcell.mark_as_wall()
 
@@ -225,7 +224,7 @@ class Path_Finder:
     def _update_display(self):
         new_surf = self.maze.draw_surf(self.w, self.h)
         if new_surf is not None:
-            self.surf.blit(new_surf)
+            self.surf.blit(new_surf, (0, 0))
             pygame.display.flip()
         self.fps.tick(self.FPS)
 
