@@ -99,7 +99,7 @@ class Maze:
                 else:
                     n = [u, d, l, r]
 
-                self._cells[row][column].neighbors = [self._cells[coords[0]][coords[1]] for coords in n if coords is not None]
+                self._cells[row][column].neighbors = [self._cells[coords[0]][coords[1]] for coords in n if coords]
 
         
         

@@ -2,16 +2,26 @@ import pygame
 from colorama import just_fix_windows_console
 
 import a_star
+from logging import Logger
 
 class DisplayController:
+    _is_initialized = False
+    
     def __init__(self):
-        just_fix_windows_console()
         self._win_w = None
         self._win_h = None
         self._cell_w = None
         self._cell_h = None
     
-    def initialize_display_dimensions():
+    def initialize(self):
+        if self._is_initialized:
+            raise RuntimeError('Display controller is already initialized')
+        
+        just_fix_windows_console()
+        pygame.init()
+        self._is_initialized = True
+
+    def get_display_dimensions():
         
     def display_user_manual():
         print('Controls:')
@@ -22,6 +32,22 @@ class DisplayController:
         print('x - Clear path, but not start and end colors')
         print('z - Toggle drawboard')
 
+    def _request_dimensions_from_user():
+        while True:
+            try:
+                dimensions = input('Window size? Seperate width and height by space eg. 1200 800 =>')
+                (w, h) = dimensions.split()
+                if len(dims) != 2:
+                    Logger.warning('Incorrect number of args. Try again')
+                    print('\n')
+                    continue
+                else:
+                    w, h = int(dims[0]), int(dims[1])
+                    if w * h == 0:
+                        print('Cell width and height must be non-zero')
+            except ValueError as e:
+                print()
+                continue
 def main():
     just_fix_windows_console()
     
