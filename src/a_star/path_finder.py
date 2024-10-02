@@ -1,25 +1,25 @@
-import heapq
 import sys
 from enum import Enum
+from heapq import heappop, heappush
 from math import sqrt
 from random import randint, seed
 from time import time
 
+import maze
 import pygame
-from maze.cell import Cell
-from maze.depth_first import Maze
+from node import *
 from pygame.locals import *
 
 
-class Path_Finder:
+class PathFinder:
     class Mode(Enum):
         MANUAL = 1
         AUTO = 2
-        
+    
     FPS = 60
 
     @staticmethod
-    def get_distance(start, goal):
+    def _get_distance(start, goal):
         dx = float(start.x - goal.x)
         dy = float(start.y - goal.y)
         dist = float(sqrt(dx * dx + dy * dy))
@@ -27,7 +27,7 @@ class Path_Finder:
         return dist
 
     @staticmethod
-    def clamp(x, y, maxx, maxy, minx, miny):
+    def _clamp(x, y, maxx, maxy, minx, miny):
         pair = []
         if x > maxx:
             pair.append(maxx)
@@ -54,7 +54,7 @@ class Path_Finder:
         self.surf = surf
         (self.w, self.h) = win_dims
         (self.box_w, self.box_h) = box_dims
-        self.maze = Maze(self.w, self.h)
+        self.maze = maze.Maze(self.w, self.h)
         self.points = []
         self.pressed_keys = {}
         self.mode = self.Mode.AUTO
@@ -65,15 +65,15 @@ class Path_Finder:
         self._regenerate_maze()
         self._handle_events()
     
-    def _find_path(self, start: Cell, goal: Cell) -> None:
+    def _find_path(self, start, goal) -> None:
         openlist = []
         closedlist = set()
         
-        current = Node(start, None, 0, self.get_distance(start, goal))
-        heapq.heappush(openlist, current)
+        current = Node(start, None, 0, self._get_distance(start, goal))
+        heappush(openlist, current)
 
         while openlist:
-            current = heapq.heappop(openlist)
+            current = heappop(openlist)
             closedlist.add(current.cell)
             
             if current.cell.x == goal.x and current.cell.y == goal.y:
@@ -93,10 +93,10 @@ class Path_Finder:
                 if not cell.is_transversible() or cell in closedlist:
                     continue
                     
-                gcost = current.gCost + self.get_distance(current.cell, cell)
-                hcost = self.get_distance(cell, goal)
+                gcost = current.gCost + self._get_distance(current.cell, cell)
+                hcost = self._get_distance(cell, goal)
                 n = Node(cell, current, gcost, hcost)
-                heapq.heappush(openlist, n)
+                heappush(openlist, n)
 
             pygame.event.pump()
         return None
@@ -200,7 +200,7 @@ class Path_Finder:
         elif K_w in self.pressed_keys or K_RIGHT in self.pressed_keys:
             self.highlighted_cell[1] -= self.box_h
 
-        self.highlighted_cell = self.clamp(self.highlighted_cell[0],
+        self.highlighted_cell = self._clamp(self.highlighted_cell[0],
                                             self.highlighted_cell[1], self.w - self.box_w,
                                             self.h - self.box_h, 0, 0)
         
@@ -227,36 +227,3 @@ class Path_Finder:
             self.surf.blit(new_surf, (0, 0))
             pygame.display.flip()
         self.fps.tick(self.FPS)
-
-class Node:
-    def __init__(self, cell, parent, gcost, hcost):
-        self.cell = cell
-        self.parent = parent
-
-        self.gCost = gcost
-        self.hCost = hcost
-        self.fCost = gcost + hcost
-    
-    def __repr__(self):
-        return repr(self.cell)
-    
-    def __lt__(self, other):
-        return self.fCost < other.fCost
-    
-    def __gt__(self, other):
-        return self.fCost > other.fCost
-    
-    def __le__(self, other):
-        return self.fCost <= other.fCost
-    
-    def __ge__(self, other):
-        return self.fCost >= other.fCost
-    
-    def __eq__(self, other):
-        return self.fCost == other.fCost
-    
-    def __ne__(self, other):
-        return not self == other
-    
-    def __hash__(self):
-        return hash(self.__repr__())

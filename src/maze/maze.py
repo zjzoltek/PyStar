@@ -1,9 +1,8 @@
 import random
 import time
-from time import time
 
 import pygame.sprite
-from maze.cell import Cell
+from cell import *
 
 
 class Maze:
@@ -15,14 +14,14 @@ class Maze:
         self._needs_write = False
         
     def generate(self, box_size, diagonals):
-        print("Generating maze . . .")
+        print('Generating maze . . .')
 
-        start_time = time()
+        start_time = time.time()
         self._generate_cells(box_size, diagonals)
         self._populate_cells()
-        end_time = time()
+        end_time = time.time()
 
-        print("Maze generated in {}s".format(end_time - start_time))
+        print('Maze generated in {}s'.format(end_time - start_time))
 
     def draw_surf(self, width, height):
         if not self._needs_write:

@@ -2,6 +2,14 @@ from enum import Enum
 
 
 class Cell:
+    class Color(Enum):
+        START = (0, 0, 255)
+        END = (255, 20, 147)
+        SEARCHED = (255, 0, 0)
+        ROUTE = (0, 255, 0)
+        OPEN = (255, 255, 255)
+        WALL = (0, 0, 0)
+
     class State(Enum):
         START = 1
         END = 2
@@ -19,14 +27,23 @@ class Cell:
         def is_terminator(self):
             return self in (Cell.State.START, Cell.State.END)
         
-    class Color(Enum):
-        START = (0, 0, 255)
-        END = (255, 20, 147)
-        SEARCHED = (255, 0, 0)
-        ROUTE = (0, 255, 0)
-        OPEN = (255, 255, 255)
-        WALL = (0, 0, 0)
-    
+        def color(self):
+            match self._state:
+                case Cell.State.START:
+                    return Cell.Color.START.value
+                case Cell.State.END:
+                    return Cell.Color.END.value
+                case Cell.State.SEARCHED:
+                    return Cell.Color.SEARCHED.value
+                case Cell.State.ROUTE:
+                    return Cell.Color.ROUTE.value
+                case Cell.State.OPEN:
+                    return Cell.Color.OPEN.value
+                case Cell.State.WALL:
+                    return Cell.Color.WALL.value
+                case _:
+                    raise ValueError('Invalid state')
+                
     def __init__(self, x, y, dimensions, maze):
         self.neighbors = []
         self.x = x
@@ -37,21 +54,7 @@ class Cell:
         self._maze = maze
 
     def get_color(self):
-        match self._state:
-            case Cell.State.START:
-                return Cell.Color.START.value
-            case Cell.State.END:
-                return Cell.Color.END.value
-            case Cell.State.SEARCHED:
-                return Cell.Color.SEARCHED.value
-            case Cell.State.ROUTE:
-                return Cell.Color.ROUTE.value
-            case Cell.State.OPEN:
-                return Cell.Color.OPEN.value
-            case Cell.State.WALL:
-                return Cell.Color.WALL.value
-            case _:
-                raise ValueError('Invalid state')
+        return self._state.color()
     
     def has_visited_neighbors(self):
         return len([cell for cell in self.neighbors if cell._state == Cell.State.OPEN]) > 1
@@ -92,7 +95,7 @@ class Cell:
         self._state = state
         
     def __repr__(self):
-        return "Cell(%s, %s)" % (self.x, self.y)
+        return 'Cell(%s, %s)' % (self.x, self.y)
     
     def __eq__(self, other):
         if not isinstance(other, Cell):
