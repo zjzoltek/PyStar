@@ -1,25 +1,25 @@
 import sys
+from dataclasses import dataclass
 from enum import Enum
 from heapq import heappop, heappush
 from math import sqrt
 from random import randint, seed
 from time import time
+from typing import Final
 
-import maze
 import pygame
 from node import *
 from pygame.locals import *
 
+import maze
+from models import *
+
 
 class PathFinder:
-    class Mode(Enum):
-        MANUAL = 1
-        AUTO = 2
-    
-    FPS = 60
+    FPS: Final[int] = 60
 
     @staticmethod
-    def _get_distance(start, goal):
+    def _get_distance(start, goal) -> float:
         dx = float(start.x - goal.x)
         dy = float(start.y - goal.y)
         dist = float(sqrt(dx * dx + dy * dy))
@@ -27,29 +27,29 @@ class PathFinder:
         return dist
 
     @staticmethod
-    def _clamp(x, y, maxx, maxy, minx, miny):
-        pair = []
-        if x > maxx:
-            pair.append(maxx)
-        elif x < minx:
-            pair.append(minx)
+    def _clamp(*, point: Point, max: Point, min: Point) -> Point:
+        clampedPoint: Point = Point()
+        if point.x > max.x:
+            clampedPoint.x = max.x
+        elif point.x < min.x:
+            clampedPoint.x = min.x
         else:
-            pair.append(x)
+            clampedPoint.x = point.x
 
-        if y > maxy:
-            pair.append(maxy)
-        elif y < miny:
-            pair.append(miny)
+        if point.y > max.y:
+            clampedPoint.y = max.y
+        elif point.y < min.y:
+            clampedPoint.y = min.y
         else:
-            pair.append(y)
+            clampedPoint.y = point.y
 
-        return pair
+        return clampedPoint
     
     @staticmethod
-    def _mouse_button_str(mouse_button):
-        return 'button{}'.format(mouse_button)
+    def _mouse_button_str(mouse_button: int) -> str:
+        return f'button{mouse_button}'
     
-    def __init__(self, surf, win_dims, box_dims, diagonals):
+    def __init__(self, surf: pygame.Surface, win_dims: Dimensions, box_dims: Dimensions, diagonals: bool):
         self.fps = pygame.time.Clock()
         self.surf = surf
         (self.w, self.h) = win_dims
@@ -59,7 +59,7 @@ class PathFinder:
         self.pressed_keys = {}
         self.mode = self.Mode.AUTO
         self.diagonals = diagonals
-        self.highlighted_cell = [0, 0]
+        self.highlighted_cell = [0, 0]  
 
         seed(randint(0, 1000))
         self._regenerate_maze()

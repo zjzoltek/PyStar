@@ -1,11 +1,18 @@
-class Node:
-    def __init__(self, cell, parent, gcost, hcost):
-        self.cell = cell
-        self.parent = parent
+from dataclasses import dataclass
 
-        self.gCost = gcost
-        self.hCost = hcost
-        self.fCost = gcost + hcost
+from maze import Cell
+
+
+@dataclass(frozen=True, kw_only=True)
+class Node:
+    cell: Cell
+    parent: Cell
+    gCost: float
+    hCost: float
+    
+    @property
+    def fCost(self) -> float:
+        return self.gCost + self.hCost
     
     def __repr__(self):
         return repr(self.cell)
