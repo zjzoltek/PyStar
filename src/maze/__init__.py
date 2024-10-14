@@ -1,7 +1,7 @@
 import random
 from dataclasses import dataclass
 from enum import Enum
-
+from typing import Self
 import pygame.sprite
 
 from log import timed
@@ -9,9 +9,9 @@ from log import timed
 type _Cell = Cell
 
 class Maze:
-    def __init__(self, *, board_width: int, board_height: int) -> None:
-        self.width: int = board_width
-        self.height: int = board_height
+    def __init__(self, *, width: int, height: int) -> None:
+        self.width: int = width
+        self.height: int = height
         self._cells: list[list[Cell]] = []
         self._needs_write: bool = False
     
@@ -172,23 +172,29 @@ class Cell:
         return [cell for cell in self.neighbors \
                 if cell._state == State.WALL and not cell.has_visited_neighbors()]
     
-    def mark_as_start(self) -> None:
+    def mark_as_start(self) -> Self:
         self._set_state(State.START)
+        return self
         
-    def mark_as_end(self) -> None:
+    def mark_as_end(self) -> Self:
         self._set_state(State.END)
+        return self
         
-    def mark_as_searched(self) -> None:
+    def mark_as_searched(self) -> Self:
         self._set_state(State.SEARCHED)
+        return self
         
-    def mark_as_route(self) -> None:
+    def mark_as_route(self) -> Self:
         self._set_state(State.ROUTE)
+        return self
     
-    def mark_as_open(self) -> None:
+    def mark_as_open(self) -> Self:
         self._set_state(State.OPEN)
+        return self
     
-    def mark_as_wall(self) -> None:
+    def mark_as_wall(self) -> Self:
         self._set_state(State.WALL)
+        return self
     
     def _set_state(self, state: State) -> None:
         if self.state != state:

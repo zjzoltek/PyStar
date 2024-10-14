@@ -1,19 +1,15 @@
 import sys
-from dataclasses import dataclass
-from enum import Enum
 from heapq import heappop, heappush
 from math import sqrt
-from random import randint, seed
 from time import time
-from typing import Final
+from typing import Final, Optional
 
 import pygame
-from node import *
 from pygame.locals import *
 
 import maze
 from models import *
-
+from log import timed
 
 class PathFinder:
     FPS: Final[int] = 60
@@ -45,31 +41,26 @@ class PathFinder:
 
         return clampedPoint
     
-    @staticmethod
-    def _mouse_button_str(mouse_button: int) -> str:
-        return f'button{mouse_button}'
-    
-    def __init__(self, surf: pygame.Surface, win_dims: Dimensions, box_dims: Dimensions, diagonals: bool):
-        self.fps = pygame.time.Clock()
-        self.surf = surf
-        (self.w, self.h) = win_dims
-        (self.box_w, self.box_h) = box_dims
-        self.maze = maze.Maze(self.w, self.h)
-        self.points = []
-        self.pressed_keys = {}
-        self.mode = self.Mode.AUTO
-        self.diagonals = diagonals
-        self.highlighted_cell = [0, 0]  
+    def __init__(self, surf: pygame.Surface, cell_dimensions: Dimensions, diagonals: bool):
+        self._fps = pygame.time.Clock()
+        self._surf = surf
+        self.cell_dimensions = cell_dimensions
+        self.maze = maze.Maze(board_width=self.w, board_height=self.h)
+        self.startEnd: StartEnd = StartEnd()
+        self.pressed_keys: dict[int, pygame.event.Event] = {}
+        self.is_drawing: bool = False
+        self.diagonals: bool = diagonals
+        self.highlighted_cell: Point = Point(0, 0)  
 
-        seed(randint(0, 1000))
         self._regenerate_maze()
         self._handle_events()
     
-    def _find_path(self, start, goal) -> None:
-        openlist = []
-        closedlist = set()
+    @timed
+    def _find_path(self, start: Cell, goal: Cell) -> Optional[list[Node]]:
+        openlist: list[Node] = []
+        closedlist: set[Cell] = {}
         
-        current = Node(start, None, 0, self._get_distance(start, goal))
+        current = Node(cell=start, parent=None, gCost=0, hCost=self._get_distance(start, goal))
         heappush(openlist, current)
 
         while openlist:
@@ -95,35 +86,29 @@ class PathFinder:
                     
                 gcost = current.gCost + self._get_distance(current.cell, cell)
                 hcost = self._get_distance(cell, goal)
-                n = Node(cell, current, gcost, hcost)
+                n = Node(cell=cell, parent=current, gCost=gcost, hCost=hcost)
                 heappush(openlist, n)
 
             pygame.event.pump()
         return None
 
-    def _generate_random_start_end(self):
-        self._reset_start_end()
-        self.points = [self.maze.get_random_transversible_point(), self.maze.get_random_transversible_point()]
-        self.points[0].mark_as_start()
-        self.points[1].mark_as_end()
-        print(f'New points generated: Start: {self.points[0].x}, {self.points[0].y} | End: {self.points[1].x}, {self.points[1].y}')
-
-    def _reset_start_end(self):
-        for p in self.points:
-            p.mark_as_open()
-        
-        self.points.clear()
+    def _generate_random_start_end(self) -> None:
+        self.startEnd.reset()
+        self.startEnd.start, self.startEnd.end = \
+            (self.maze.get_random_transversible_point().mark_as_start(), \
+                self.maze.get_random_transversible_point().mark_as_end())
+        print(f'New points generated: {self.startEnd}')
     
-    def _reset_maze_colors(self, include_start_end=False):
+    def _reset_maze_colors(self, *, include_start_end=False) -> None:
         self.maze.reopen_cells()
         
         if include_start_end:
-            self._reset_start_end()
+            self.startEnd.reset()
 
-    def _regenerate_maze(self):
-        self.maze.generate((self.box_w, self.box_h), self.diagonals)
+    def _regenerate_maze(self) -> None:
+        self.maze.generate((self.cell_dimensions.width, self.cell_dimensions.height), self.diagonals)
                 
-    def _handle_events(self):
+    def _handle_events(self) -> None:
         while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -131,7 +116,7 @@ class PathFinder:
                     sys.exit(0)
 
                 if event.type == MOUSEBUTTONDOWN:
-                    self.pressed_keys[self._mouse_button_str(event.button)] = event
+                    self.pressed_keys[event.button] = event
                 if event.type == KEYDOWN:
                     self.pressed_keys[event.key] = event
 
@@ -152,13 +137,10 @@ class PathFinder:
         if K_f in self.pressed_keys:
             self._reset_maze_colors()
 
-            if len(self.points) != 2:
+            if not self.startEnd.has_start() or not self.startEnd.has_end():
                 self._generate_random_start_end()
             
-            start_time = time()
             self._find_path(self.points[0], self.points[1])
-            end_time = time()
-            print('Done in {} seconds'.format(end_time - start_time))
         
         if K_p in self.pressed_keys:
             self._generate_random_start_end()
@@ -173,36 +155,26 @@ class PathFinder:
             self._reset_maze_colors()
 
         if K_SPACE in self.pressed_keys:
-            self._progress_points(self.maze.get_cell(self.highlighted_cell[0], self.highlighted_cell[1]))
+            self.startEnd.progress(self.maze.get_cell(self.highlighted_cell[0], self.highlighted_cell[1]))
 
     def _handle_mouse_events(self): 
-        if self._mouse_button_str(1) in self.pressed_keys:
-            event = self.pressed_keys[self._mouse_button_str(1)]
-            self._progress_points(self.maze.get_cell(event.pos[0], event.pos[1]))
-
-    def _progress_points(self, cell):
-        if len(self.points) == 2:
-            self._reset_start_end()
-        elif cell.is_transversible() and not cell.is_terminator():
-            if not self.points:
-                cell.mark_as_start()
-            else:
-                cell.mark_as_end()
-            self.points.append(cell)
+        if 1 in self.pressed_keys:
+            event = self.pressed_keys[1]
+            self.startEnd.progress(self.maze.get_cell(event.pos[0], event.pos[1]))
 
     def _compute_current_highlighted_cell(self):
         if K_d in self.pressed_keys or K_RIGHT in self.pressed_keys:
-            self.highlighted_cell[0] += self.box_w
+            self.highlighted_cell[0] += self.cell_dimensions.width
         elif K_s in self.pressed_keys or K_DOWN in self.pressed_keys:
-            self.highlighted_cell[1] += self.box_h
+            self.highlighted_cell[1] += self.cell_dimensions.height
         elif K_a in self.pressed_keys or K_LEFT in self.pressed_keys:
-            self.highlighted_cell[0] -= self.box_w
+            self.highlighted_cell[0] -= self.cell_dimensions.width
         elif K_w in self.pressed_keys or K_RIGHT in self.pressed_keys:
-            self.highlighted_cell[1] -= self.box_h
+            self.highlighted_cell[1] -= self.cell_dimensions.height
 
         self.highlighted_cell = self._clamp(self.highlighted_cell[0],
-                                            self.highlighted_cell[1], self.w - self.box_w,
-                                            self.h - self.box_h, 0, 0)
+                                            self.highlighted_cell[1], self.w - self.cell_dimensions.width,
+                                            self.h - self.cell_dimensions.height, 0, 0)
         
         if K_v in self.pressed_keys and self.mode == self.Mode.MANUAL:
             hcell = self.maze.get_cell(self.highlighted_cell[0], self.highlighted_cell[1])
@@ -216,14 +188,14 @@ class PathFinder:
             hcell = self.maze.get_cell(self.highlighted_cell[0], self.highlighted_cell[1])
             hcell.mark_as_open()
 
-        pygame.draw.rect(self.surf, (0, 255, 0),
-                            (self.highlighted_cell[0] *  self.box_w, \
-                                self.highlighted_cell[1] *  self.box_h, \
-                                    self.box_w, self.box_h))
+        pygame.draw.rect(self._surf, (0, 255, 0),
+                            (self.highlighted_cell[0] *  self.cell_dimensions.width, \
+                                self.highlighted_cell[1] *  self.cell_dimensions.height, \
+                                    self.cell_dimensions.width, self.cell_dimensions.height))
     
     def _update_display(self):
         new_surf = self.maze.draw_surf(self.w, self.h)
         if new_surf is not None:
-            self.surf.blit(new_surf, (0, 0))
+            self._surf.blit(new_surf, (0, 0))
             pygame.display.flip()
-        self.fps.tick(self.FPS)
+        self._fps.tick(self.FPS)

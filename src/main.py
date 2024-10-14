@@ -1,7 +1,8 @@
 import pygame
 from colorama import just_fix_windows_console
-from path_finder import PathFinder
-
+from a_star import PathFinder
+from log import ColorfulStreamHandler, logging
+import sys
 
 def main():
     just_fix_windows_console()
@@ -13,6 +14,7 @@ def main():
     diagonals = get_diagonals()
 
     pygame.init()
+    logging.basicConfig(level=logging.DEBUG, handlers=[ColorfulStreamHandler(sys.stdout)])
     PathFinder(pygame.display.set_mode((win_w, win_h), pygame.HWSURFACE|pygame.DOUBLEBUF), (win_w, win_h), (box_w, box_h), diagonals)
 
 def get_diagonals():
