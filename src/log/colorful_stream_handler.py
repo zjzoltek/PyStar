@@ -33,7 +33,7 @@ class ColorfulStreamHandler(logging.StreamHandler):
     @override
     def __init__(self, stream: Any):
         super().__init__(stream)
-        super().set_name(self.__qualname__)
+        super().set_name(ColorfulStreamHandler.__name__)
         super().setFormatter(logging.Formatter(self._logFormat))
         colorama.just_fix_windows_console()
     
