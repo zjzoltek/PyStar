@@ -1,5 +1,7 @@
 from enum import Enum
 
+type RGB = tuple[int, int, int]
+
 class Color(Enum):
     START = (0, 0, 255)
     END = (255, 20, 147)

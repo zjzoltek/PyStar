@@ -1,15 +1,14 @@
-import log
+from errors import IncorrectNumberOfArgsError, InvalidArgError
+from log import logging
+
 
 class Console:
     def __init__(self, prompt_end: str = '=>'):
         self._prompt_end = prompt_end
-        self._logger = log.logging.getLogger(Console.__name__)
+        self._logger = logging.getLogger(Console.__name__)
     
     def request(self, prompt: str) -> list[str]:
-        args = input(f'{prompt}{self._prompt_end}').split(' ')
-        if not args:
-            raise ValueError('No args provided')
-        return args
+        return input(f'{prompt}{self._prompt_end}').split(' ')
     
     def switch(self, prompt: str) -> bool:
         valid_answers: set[str] = {'y', 'yes', 'n', 'no'}
@@ -20,7 +19,7 @@ class Console:
                 args = self.request(prompt)
 
                 if len(args) != 1:
-                    raise 'Expected (1) argument'
+                    raise 
                 
                 answer = args[0].lower()
                 

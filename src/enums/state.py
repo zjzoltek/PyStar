@@ -1,5 +1,7 @@
 from enum import Enum
+
 from color import *
+
 
 class State(Enum):
     START = 1
@@ -18,7 +20,7 @@ class State(Enum):
     def is_terminator(self) -> bool:
         return self in (State.START, State.END)
 
-    def color(self) -> tuple[int, int, int]:
+    def color(self) -> RGB:
         match self:
             case State.START:
                 return Color.START.value
