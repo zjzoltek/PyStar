@@ -1,9 +1,13 @@
+import functools
 import logging
 from collections.abc import Callable
 from time import time
+
 from colorful_stream_handler import *
 
+
 def timed[**P, R](f: Callable[P, R]) -> Callable[P, R]:
+    @functools.wraps(f)
     def inner(*args: P.args, **kwargs: P.kwargs) -> R:
         start = time()
         result = f(*args, **kwargs)

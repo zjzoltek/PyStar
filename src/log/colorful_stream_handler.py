@@ -1,5 +1,6 @@
 import logging
-from typing import Final, override, Any, LiteralString
+from typing import Any, Final, LiteralString, override
+
 import colorama
 
 logging.LoggerAdapter
