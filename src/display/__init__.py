@@ -1,2 +1,2 @@
-from console import *
-from display import *
+from display.console import *
+from display.screen import *

@@ -1,22 +1,17 @@
-from typing import override, Optional
+from typing import override, Any
 
 class IncorrectNumberOfArgsError(Exception):
     @override
-    def __init__(self, *args: object):
+    def __init__(self, expected: int, received: int, *args: object) -> None:
         super().__init__(args)
-        self._expected: Optional[int] = None
-        self._received: Optional[int] = None
+        self._expected = expected
+        self._received = received
         
-    @classmethod
-    def create(cls, expected: str, received: str, *args: object):
-        e = cls(args)
-        e._expected = expected
-        e._received = received
-        return e
-
+    @override
     def __str__(self):
         return f'Expected ({self._expected}), got ({self._received})'
     
+    @override
     def __repr__(self):
         return IncorrectNumberOfArgsError.__name__ \
             + f'({self._expected, self._received})'

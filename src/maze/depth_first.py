@@ -3,6 +3,7 @@ import pygame.sprite
 
 from log import timed
 from models import Cell, Dimensions
+from enums import State
 
 
 class Maze:
@@ -19,15 +20,15 @@ class Maze:
 
     def draw_surf(self, width: int, height: int) -> pygame.Surface | None:
         if not self._needs_write:
-            return
+            return None
 
         surf = pygame.Surface((width, height))
         for column in self._cells:
             for cell in column:
                 pygame.draw.rect(surf, cell.get_color(), \
-                    (cell.x * cell.dimensions[0], \
-                    cell.y*cell.dimensions[1], \
-                    cell.dimensions[0], cell.dimensions[1]))
+                    (cell.x * cell.dimensions.width, \
+                    cell.y*cell.dimensions.height, \
+                    cell.dimensions.width, cell.dimensions.height))
         
         self._needs_write = False
         
@@ -42,7 +43,7 @@ class Maze:
     def get_random_transversible_point(self) -> Cell:
         all_cells = [row for row in self._cells for cell in row if cell.is_transversible()]
         random.shuffle(all_cells)
-        return random.choice(all_cells)
+        return random.choice(random.choice(all_cells))
        
     def get_cell(self, x: int, y: int) -> Cell | None:
         for row in self._cells:
@@ -50,6 +51,8 @@ class Maze:
                 if cell.x == int((x / self._height)) \
                         and cell.y == int((y / self._width)):
                     return cell
+        
+        return None
                 
     def on_cell_state_change(self) -> None:
         self._needs_write = True

@@ -1,11 +1,12 @@
 from dataclasses import dataclass
 from typing import Optional
-from cell import *
+from models.cell import *
 
+type _Node = Node
 @dataclass(frozen=True)
 class Node:
     cell: Cell
-    parent: Optional[Cell]
+    parent: Optional[_Node]
     gCost: float
     hCost: float
     

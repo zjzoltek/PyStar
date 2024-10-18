@@ -1,20 +1,24 @@
-from typing import Optional
+from typing import Optional, Self
 
 import pygame
 
-from models import Dimensions
-from console import *
+from models.dimensions import Dimensions
+from display.console import *
+from validation.validator import Validator
+from validation.in_range import InRange
+from validation.matches_type import MatchesType
+from validation.has_length import HasLength
 
-class Display:
-    def __init__(self):
+class Screen:
+    def __init__(self) -> None:
         self._surf: Optional[pygame.Surface] = None
         self._cell_dimensions: Optional[Dimensions] = None
         self._window_dimensions: Optional[Dimensions] = None
         self._diagonals: Optional[bool] = None
         self._console = Console()
-     
+    
     @property
-    def surf(self) -> pygame.Surface:
+    def surf(self) -> Optional[pygame.Surface]:
         return self._surf
     
     @property
@@ -29,7 +33,7 @@ class Display:
     def diagonals(self) -> Optional[bool]:
         return self._diagonals
     
-    def setup(self) -> None:
+    def setup(self) -> Self:
         pygame.init()
         
         self._window_dimensions = self._get_display_dimensions()
@@ -38,6 +42,8 @@ class Display:
         self._surf = pygame.display.set_mode(\
             (self._window_dimensions.width, self._window_dimensions.height), \
                 pygame.HWSURFACE|pygame.DOUBLEBUF)
+        
+        return self
     
                 
     def display_user_manual(self) -> None:
@@ -55,38 +61,34 @@ class Display:
     def _get_display_dimensions(self) -> Dimensions:
         while True:
             try:
-                args = self._console.request('Window size? Input width followed by height (e.g. "500 500")')
-        
-                if len(args) != 2:
-                    raise 'Expected (2) arguments'
+                itemValidator = Validator(MatchesType(int()), InRange(minimum=1, unboundedMax=True, inclusiveMin=True))
+                argsValidator = Validator(HasLength(2))
                 
+                args = self._console.request('Window size? Input width followed by height (e.g. "500 500")', argsValidator)
+            
                 w = int(args[0])
                 h = int(args[1])
                 
-                if w <= 0:
-                    raise 'First arg (width) must be a positive integer'
-                if h <= 0:
-                    raise 'Second arg (height) must be a positive integer'
+                for item in args:
+                    itemValidator.validate(item)
                 
                 return Dimensions(w, h)
             except Exception as e:
-                self._console.err(e)
+                self._console.err(str(e))
                 continue
 
     def _get_cell_dimensions(self) -> Dimensions:
         while True:
             try:
-                args = self._console.request('Cell size? (e.g. "10")')
+                itemValidator = Validator(MatchesType(int()), InRange(minimum=1, unboundedMax=True, inclusiveMin=True))
+                argsValidator = Validator(HasLength(1))
+                
+                args = self._console.request('Cell size? (e.g. "10")', argsValidator)
         
-                if len(args) > 1:
-                    raise 'Expected (1) argument'
-                
                 cell_box_size = int(args[0])
-                
-                if cell_box_size <= 0:
-                    raise 'Cell size must be a positive integer'
+                itemValidator.validate(cell_box_size)
                 
                 return Dimensions(cell_box_size, cell_box_size)
             except Exception as e:
-                self._console.err(e)
+                self._console.err(str(e))
                 continue

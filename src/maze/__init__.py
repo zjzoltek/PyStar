@@ -1,1 +1,1 @@
-from depth_first import *
+from maze.depth_first import *

@@ -1,25 +1,27 @@
 from dataclasses import dataclass
 from typing import Self
 
-from enums import Color, State
+from enums import RGB, State
 from maze import Maze
+from models import Dimensions
 
 type _Cell = Cell
 
 @dataclass
 class Cell:
-    neighbors: list[_Cell]
     x: int
     y: int
-    dimensions: tuple[int, int]
-    state: State = State.WALL
+    dimensions: Dimensions
     maze: Maze
+    
+    state: State = State.WALL
+    neighbors: list[_Cell] = []
   
-    def get_color(self) -> Color:
+    def get_color(self) -> RGB:
         return self.state.color()
     
     def has_visited_neighbors(self) -> bool:
-        return len([cell for cell in self.neighbors if cell._state == State.OPEN]) > 1
+        return len([cell for cell in self.neighbors if cell.state == State.OPEN]) > 1
 
     def is_terminator(self) -> bool:
         return self.state.is_terminator()
@@ -32,7 +34,7 @@ class Cell:
     
     def get_unvisited_neighbors(self) -> list[_Cell]:
         return [cell for cell in self.neighbors \
-                if cell._state == State.WALL and not cell.has_visited_neighbors()]
+                if cell.state == State.WALL and not cell.has_visited_neighbors()]
     
     def mark_as_start(self) -> Self:
         self._set_state(State.START)
@@ -66,13 +68,13 @@ class Cell:
     def __repr__(self) -> str:
         return 'Cell(%s, %s)' % (self.x, self.y)
     
-    def __eq__(self, other: _Cell) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Cell):
             return False
         
         return self.x == other.x and self.y == other.y
 
-    def __ne__(self, other: _Cell) -> bool:
+    def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
     
     def __hash__(self) -> int:

@@ -1,10 +1,9 @@
-from typing import Callable, Optional
+from typing import Optional
+from abc import ABC, abstractmethod
 
-class Condition[T, R: Exception]:
-    def __init__(self, condition: Callable[[T], Optional[R]]):
-        self._test: Callable[[T], Optional[R]] = condition
-    
-    @property
-    def test(self):
-        return self._test
-        
+
+class Condition[T, R: Exception](ABC):
+    @abstractmethod
+    def test(self, value: T) -> Optional[R]:
+        raise NotImplementedError()
+

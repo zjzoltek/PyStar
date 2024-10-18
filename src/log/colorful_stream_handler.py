@@ -31,12 +31,12 @@ class ColorfulStreamHandler(logging.StreamHandler):
                 raise ValueError(f'No styling found for {record}')
             
     @override
-    def __init__(self, stream: Any):
+    def __init__(self, stream: Any) -> None:
         super().__init__(stream)
         super().set_name(ColorfulStreamHandler.__name__)
         super().setFormatter(logging.Formatter(self._logFormat))
         colorama.just_fix_windows_console()
     
     @override
-    def emit(self, record):
+    def emit(self, record) -> None:
         super().emit(ColorfulStreamHandler._styleRecord(record))

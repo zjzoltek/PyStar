@@ -1,2 +1,2 @@
-from state import *
-from color import *
+from enums.state import *
+from enums.color import *

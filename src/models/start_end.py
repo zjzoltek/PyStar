@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from cell import *
+from models.cell import *
 
 @dataclass
 class StartEnd:
@@ -11,11 +11,18 @@ class StartEnd:
         return self.start is None and self.end is None
     
     def reset(self) -> None:
-        self.start.mark_as_open()
-        self.end.mark_as_open()
+        if self.start:
+            self.start.mark_as_open()
+        
+        if self.end:
+            self.end.mark_as_open()
+            
         self.start = self.end = None
     
-    def progress(self, p: Cell) -> None:
+    def progress(self, p: Optional[Cell]) -> None:
+        if p is None:
+            return
+        
         if self.start is not None and self.end is not None:
             self.reset()
         

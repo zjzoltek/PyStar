@@ -1,1 +1,1 @@
-from path_finder import *
+from a_star.path_finder import *
