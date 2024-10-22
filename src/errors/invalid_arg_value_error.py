@@ -9,7 +9,7 @@ class InvalidArgValueError(Exception):
 
     @override
     def __str__(self):
-        return f'Expected one of {self._expected}, got {self._received}'
+        return f'Expected argument to be one of {self._expected}, got {self._received}'
     
     @override
     def __repr__(self):

@@ -1,14 +1,15 @@
 from typing import override, Optional, Any
 
 class ArgOutOfRangeError(Exception):
-    _MESSAGE_FMT = 'Out of range: {range}'
+    _MESSAGE_FMT = 'Expected argument to be in range: {range}'
+    _INF = '∞'
     
     def __init__(self, minimum: Optional[Any] = None, maximum: Optional[Any] = None, \
         unboundedMin: bool = False, unboundedMax: bool = False,
         inclusiveMin: bool = False, inclusiveMax: bool = False, *args: object) -> None:
         super().__init__(args)
-        assert((minimum is not None) ^ (unboundedMin is not None))
-        assert((maximum is not None) ^ (unboundedMax is not None))
+        assert (minimum is not None) ^ (unboundedMin is True), 'A minimum or unbounded minimum must be specified, but not both'
+        assert (maximum is not None) ^ (unboundedMax is True), 'A maximum or unbounded maximum must be specified, but not both'
         self._min = minimum
         self._max = maximum
         self._unboundedMin = unboundedMin
@@ -36,6 +37,8 @@ class ArgOutOfRangeError(Exception):
             right_bracket = ')'
         
         return '{left_bracket}{min},{max}{right_bracket}' \
-                .format(left_bracket=left_bracket, min=self._min, \
-                    max=self._max, right_bracket=right_bracket)
+                .format(left_bracket=left_bracket, \
+                    min=self._min or self._INF, \
+                    max=self._max or self._INF, \
+                    right_bracket=right_bracket)
         

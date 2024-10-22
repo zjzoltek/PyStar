@@ -15,7 +15,7 @@ class Screen:
         self._cell_dimensions: Optional[Dimensions] = None
         self._window_dimensions: Optional[Dimensions] = None
         self._diagonals: Optional[bool] = None
-        self._console = Console()
+        self._console = Console(prompt_end=' ')
     
     @property
     def surf(self) -> Optional[pygame.Surface]:
@@ -56,23 +56,24 @@ class Screen:
         self._console.out('z - Toggle drawboard')
         
     def _get_diagonals(self) -> bool:
-        return self._console.switch('Would you like to allow A* to move diagonally?')
+        while True:
+            try:
+                return self._console.switch('Would you like to allow A* to move diagonally?')
+            except Exception as e:
+                self._console.err(str(e))
+                continue
             
     def _get_display_dimensions(self) -> Dimensions:
         while True:
             try:
                 itemValidator = Validator(MatchesType(int()), InRange(minimum=1, unboundedMax=True, inclusiveMin=True))
-                argsValidator = Validator(HasLength(2))
                 
-                args = self._console.request('Window size? Input width followed by height (e.g. "500 500")', argsValidator)
+                args = self._console.request('Window size? Input width followed by height (e.g. "500 500")', Validator(HasLength(2)))
             
-                w = int(args[0])
-                h = int(args[1])
-                
                 for item in args:
                     itemValidator.validate(item)
                 
-                return Dimensions(w, h)
+                return Dimensions(int(args[0]), int(args[1]))
             except Exception as e:
                 self._console.err(str(e))
                 continue
@@ -80,15 +81,12 @@ class Screen:
     def _get_cell_dimensions(self) -> Dimensions:
         while True:
             try:
-                itemValidator = Validator(MatchesType(int()), InRange(minimum=1, unboundedMax=True, inclusiveMin=True))
-                argsValidator = Validator(HasLength(1))
-                
-                args = self._console.request('Cell size? (e.g. "10")', argsValidator)
+                args = self._console.request('Cell size? (e.g. "10")', Validator(HasLength(1)))
         
-                cell_box_size = int(args[0])
-                itemValidator.validate(cell_box_size)
+                Validator(MatchesType(int()), \
+                    InRange(minimum=1, unboundedMax=True, inclusiveMin=True)).validate(args[0])
                 
-                return Dimensions(cell_box_size, cell_box_size)
+                return Dimensions(int(args[0]), int(args[0]))
             except Exception as e:
                 self._console.err(str(e))
                 continue

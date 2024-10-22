@@ -9,7 +9,7 @@ class IncorrectNumberOfArgsError(Exception):
         
     @override
     def __str__(self):
-        return f'Expected ({self._expected}), got ({self._received})'
+        return f'Expected ({self._expected}) arguments, got ({self._received})'
     
     @override
     def __repr__(self):

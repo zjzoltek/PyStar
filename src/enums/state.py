@@ -10,6 +10,7 @@ class State(Enum):
     ROUTE = 4
     OPEN = 5
     WALL = 6
+    HIGHLIGHTED = 7
 
     def is_openable(self) -> bool:
         return self in (State.SEARCHED, State.ROUTE)

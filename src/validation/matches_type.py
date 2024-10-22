@@ -8,5 +8,14 @@ class MatchesType(Condition[Any, InvalidArgTypeError]):
         
     @override
     def test(self, value: Any):
-        if value is not self._expectedType:
+        try:
+            self._expectedType(value)
+        except:
             return InvalidArgTypeError(self._expectedType, value)
+        
+        return None
+    
+    @override
+    def transform(self, value: Any) -> object:
+        return self._expectedType(value)
+        

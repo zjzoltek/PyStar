@@ -2,18 +2,17 @@ import random
 import pygame.sprite
 
 from log import timed
-from models import Cell, Dimensions
-from enums import State
+from models import Cell, Dimensions, ICellStateListener
 
 
-class Maze:
+class Maze(ICellStateListener):
     def __init__(self, width: int, height: int) -> None:
         self._width: int = width
         self._height: int = height
         self._cells: list[list[Cell]] = []
         self._needs_write: bool = False
     
-    @timed
+    @timed('Maze.generate')
     def generate(self, cell_size: Dimensions, diagonals: bool) -> None:
         self._generate_cells(cell_size, diagonals)
         self._populate_cells()

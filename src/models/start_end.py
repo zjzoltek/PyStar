@@ -7,8 +7,8 @@ class StartEnd:
     start: Optional[Cell]
     end: Optional[Cell]
     
-    def is_empty(self) -> bool:
-        return self.start is None and self.end is None
+    def is_populated(self) -> bool:
+        return self.start is not None and self.end is not None
     
     def reset(self) -> None:
         if self.start:

@@ -1,22 +1,26 @@
-from dataclasses import dataclass
-from typing import Self
+from dataclasses import dataclass, field
+from typing import Self, Protocol, Optional
 
 from enums import RGB, State
-from maze import Maze
-from models import Dimensions
+from models.dimensions import Dimensions
 
 type _Cell = Cell
 
+class ICellStateListener(Protocol):
+    def on_cell_state_change(self) -> None:
+        pass
+    
 @dataclass
 class Cell:
     x: int
     y: int
     dimensions: Dimensions
-    maze: Maze
+    maze: ICellStateListener
     
     state: State = State.WALL
-    neighbors: list[_Cell] = []
-  
+    neighbors: list[_Cell] = field(default_factory=list)
+    _prev_state: Optional[State] = None
+
     def get_color(self) -> RGB:
         return self.state.color()
     
@@ -58,6 +62,20 @@ class Cell:
     
     def mark_as_wall(self) -> Self:
         self._set_state(State.WALL)
+        return self
+    
+    def highlight(self) -> Self:
+        self._prev_state = self.state
+        self._set_state(State.HIGHLIGHTED)
+        return self
+    
+    def unhighlight(self) -> Self:
+        if self.state != State.HIGHLIGHTED:
+            return self
+        
+        assert self._prev_state, 'No previous state recorded'
+        
+        self._set_state(self._prev_state)
         return self
     
     def _set_state(self, state: State) -> None:

@@ -1,11 +1,9 @@
 import logging
 from typing import Any, Final, LiteralString, override
-
 import colorama
 
-logging.LoggerAdapter
 class ColorfulStreamHandler(logging.StreamHandler):
-    _logFormat: Final[LiteralString] = '[%(levelname)s] [%(asctime)s] (%(module)s:%(name)s:%(funcName)s) | %(message)s'
+    _logFormat: Final[LiteralString] = '[%(levelname)s] [%(asctime)s] (%(name)s:%(funcName)s) | %(message)s'
     
     @staticmethod
     def _styleRecord(logRecord: logging.LogRecord) -> logging.LogRecord:
@@ -40,3 +38,4 @@ class ColorfulStreamHandler(logging.StreamHandler):
     @override
     def emit(self, record) -> None:
         super().emit(ColorfulStreamHandler._styleRecord(record))
+        self.stream.write(colorama.Style.RESET_ALL)

@@ -20,10 +20,9 @@ class Console:
         yes = ('y', 'yes')
         no = ('n', 'no')
         
-        args = list(map(lambda arg: arg.lower(), self.request(prompt)))
+        args = list(map(lambda arg: arg.lower(), self.request(prompt, Validator(HasLength(1)))))
         
-        v: Validator[list[str]] = Validator(IsIn([*yes, *no]), HasLength(1))
-        v.validate(args)
+        Validator(IsIn([*yes, *no])).validate(args[0])
 
         return args[0] in yes
 

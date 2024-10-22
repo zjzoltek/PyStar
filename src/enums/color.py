@@ -9,3 +9,4 @@ class Color(Enum):
     ROUTE = (0, 255, 0)
     OPEN = (255, 255, 255)
     WALL = (0, 0, 0)
+    HIGHLIGHTED = (0, 255, 0)

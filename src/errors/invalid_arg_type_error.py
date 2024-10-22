@@ -6,12 +6,10 @@ class InvalidArgTypeError(Exception):
         super().__init__(args)
         self._expected = expected
         self._received = type(received)
-
     @override
     def __str__(self):
-        received_type = self._received.__class__.__name__
-        return f'Expected ({self._expected}), but received \
-            ({received_type}) instead'
+        return f'Expected an argument of type ({self._expected}), but received ' + \
+           f'({self._received}) instead'
     
     @override
     def __repr__(self):

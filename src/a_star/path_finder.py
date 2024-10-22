@@ -12,7 +12,6 @@ import models
 
 class PathFinder:
     FPS: Final[int] = 60
-    HIGHLIGHTED_CELL_COLOR: Final[tuple[int, int, int]] = (0, 255, 0)
     LEFT_CLICK: Final[int] = 1
     RIGHT_CLICK: Final[int] = 3
     
@@ -37,9 +36,9 @@ class PathFinder:
         if point.y > max.y:
             clampedPoint.append(max.y)
         elif point.y < min.y:
-            clampedPoint.append(max.y)
+            clampedPoint.append(min.y)
         else:
-            clampedPoint.append(max.y)
+            clampedPoint.append(point.y)
 
         return models.Point(clampedPoint[0], clampedPoint[1])
     
@@ -60,12 +59,13 @@ class PathFinder:
         self.is_drawing: bool = False
         self.diagonals: bool = diagonals
         self.highlighted_cell: models.Point = models.Point(0, 0)  
+        self.last_highlighted_cell: Optional[models.Point] = None
         self.window_dimensions = window_dimensions
         
         self._generate_maze()
         self._handle_events()
     
-    @timed
+    @timed('PathFinder._find_path')
     def _find_path(self, startEnd: models.StartEnd) -> Optional[list[models.Node]]:
         assert(startEnd.start is not None)
         assert(startEnd.end is not None)
@@ -149,7 +149,7 @@ class PathFinder:
         if K_f in self.pressed_keys:
             self._reset_maze_colors()
 
-            if self.startEnd.is_empty():
+            if not self.startEnd.is_populated():
                 self._generate_random_start_end()
             
             self._find_path(self.startEnd)
@@ -175,6 +175,9 @@ class PathFinder:
             self.startEnd.progress(self.maze.get_cell(event.pos[0], event.pos[1]))
 
     def _compute_current_highlighted_cell(self) -> None:
+        if not self.is_drawing:
+            return
+        
         if K_d in self.pressed_keys or K_RIGHT in self.pressed_keys:
             self.highlighted_cell.x += self.cell_dimensions.width
         elif K_s in self.pressed_keys or K_DOWN in self.pressed_keys:
@@ -192,7 +195,7 @@ class PathFinder:
         hcell: Optional[models.Cell] = self.maze.get_cell(self.highlighted_cell.x, self.highlighted_cell.y)
         assert(hcell is not None)
         
-        if K_v in self.pressed_keys and self.is_drawing:
+        if K_v in self.pressed_keys:
             hcell.mark_as_wall()
 
         if self.RIGHT_CLICK in self.pressed_keys and self.is_drawing:
@@ -201,18 +204,26 @@ class PathFinder:
             assert(mcell is not None)
             mcell.mark_as_wall()
 
-        if K_b in self.pressed_keys and self.is_drawing:
+        if K_b in self.pressed_keys:
             hcell.mark_as_open()
-
-        pygame.draw.rect(self._surf, self.HIGHLIGHTED_CELL_COLOR,
-                            (self.highlighted_cell.x *  self.cell_dimensions.width, \
-                                self.highlighted_cell.y *  self.cell_dimensions.height, \
-                                    self.cell_dimensions.width, self.cell_dimensions.height))
     
     def _update_display(self) -> None:
+        if self.is_drawing and self.last_highlighted_cell != self.highlighted_cell:
+            cell_to_highlight = self.maze.get_cell(self.highlighted_cell.x, self.highlighted_cell.y)
+            assert cell_to_highlight, 'Could not find cell to highlight'
+            cell_to_highlight.highlight()
+            
+            if self.last_highlighted_cell:
+                cell_to_unhighlight = self.maze.get_cell(self.last_highlighted_cell.x, self.last_highlighted_cell.y)
+                assert cell_to_unhighlight, 'Could not find cell to unhighlight'
+                cell_to_unhighlight.unhighlight()
+                
         new_surf = self.maze.draw_surf(self.window_dimensions.width, \
                                         self.window_dimensions.height)
         if new_surf is not None:
             self._surf.blit(new_surf, (0, 0))
-            pygame.display.flip()
+
+        self.last_highlighted_cell = self.highlighted_cell.copy()
+        
+        pygame.display.flip()
         self._fps.tick(self.FPS)
