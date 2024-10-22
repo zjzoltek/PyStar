@@ -6,6 +6,7 @@ class InvalidArgTypeError(Exception):
         super().__init__(args)
         self._expected = expected
         self._received = type(received)
+        
     @override
     def __str__(self):
         return f'Expected an argument of type ({self._expected}), but received ' + \
