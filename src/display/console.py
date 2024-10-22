@@ -1,8 +1,10 @@
-from log import logging
 from typing import Optional
+
+from log import logging
+from validation.has_length import HasLength
 from validation.is_in import IsIn
 from validation.validator import Validator
-from validation.has_length import HasLength
+
 
 class Console:
     def __init__(self, prompt_end: str = '=>'):
@@ -22,9 +24,7 @@ class Console:
         
         args = list(map(lambda arg: arg.lower(), self.request(prompt, Validator(HasLength(1)))))
         
-        Validator(IsIn([*yes, *no])).validate(args[0])
-
-        return args[0] in yes
+        return Validator(IsIn([*yes, *no])).validate(args)
 
     def out(self, content: str):
         self._logger.info(content)
