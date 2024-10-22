@@ -2,12 +2,14 @@ from typing import Optional, Self
 
 import pygame
 
-from models.dimensions import Dimensions
 from display.console import *
-from validation.validator import Validator
+from models.dimensions import Dimensions
+from models.value_range import INF, ValueRange
+from validation.has_length import HasLength
 from validation.in_range import InRange
 from validation.matches_type import MatchesType
-from validation.has_length import HasLength
+from validation.validator import Validator
+
 
 class Screen:
     def __init__(self) -> None:
@@ -66,7 +68,7 @@ class Screen:
     def _get_display_dimensions(self) -> Dimensions:
         while True:
             try:
-                itemValidator = Validator(MatchesType(int()), InRange(minimum=1, unboundedMax=True, inclusiveMin=True))
+                itemValidator = Validator(MatchesType(int()), InRange(minimum=1, maximum=INF, inclusiveMin=True))
                 
                 args = self._console.request('Window size? Input width followed by height (e.g. "500 500")', Validator(HasLength(2)))
             
@@ -84,7 +86,7 @@ class Screen:
                 args = self._console.request('Cell size? (e.g. "10")', Validator(HasLength(1)))
         
                 Validator(MatchesType(int()), \
-                    InRange(minimum=1, unboundedMax=True, inclusiveMin=True)).validate(args[0])
+                    InRange(minimum=1, maximum=INF, inclusiveMin=True)).validate(args[0])
                 
                 return Dimensions(int(args[0]), int(args[0]))
             except Exception as e:
