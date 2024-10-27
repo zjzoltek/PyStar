@@ -13,29 +13,33 @@ from validation.validator import Validator
 
 class Screen:
     def __init__(self) -> None:
-        self._surf: Optional[pygame.Surface] = None
+        self._surf: pygame.Surface
         self._cell_dimensions: Optional[Dimensions] = None
         self._window_dimensions: Optional[Dimensions] = None
         self._diagonals: Optional[bool] = None
         self._console = Console(prompt_end=' ')
     
     @property
-    def surf(self) -> Optional[pygame.Surface]:
+    def surf(self) -> pygame.Surface:
+        assert self._surf is not None
         return self._surf
     
     @property
-    def cell_dimensions(self) -> Optional[Dimensions]:
+    def cell_dimensions(self) -> Dimensions:
+        assert self._cell_dimensions is not None
         return self._cell_dimensions
     
     @property
-    def window_dimensions(self) -> Optional[Dimensions]:
+    def window_dimensions(self) -> Dimensions:
+        assert self._window_dimensions is not None
         return self._window_dimensions
     
     @property
-    def diagonals(self) -> Optional[bool]:
+    def diagonals(self) -> bool:
+        assert self._diagonals is not None
         return self._diagonals
     
-    def setup(self) -> Self:
+    def setup(self) -> None:
         pygame.init()
         
         self._window_dimensions = self._get_display_dimensions()
@@ -44,8 +48,6 @@ class Screen:
         self._surf = pygame.display.set_mode(\
             (self._window_dimensions.width, self._window_dimensions.height), \
                 pygame.HWSURFACE|pygame.DOUBLEBUF)
-        
-        return self
     
                 
     def display_user_manual(self) -> None:

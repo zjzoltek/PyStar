@@ -1,20 +1,17 @@
-import sys
 from heapq import heappop, heappush
 from math import sqrt
-from typing import Final, Optional
+from typing import final, Optional, Callable
 
-import pygame
 from pygame.locals import *
 
-import maze
-from log import logging, timed
+from log import timed
 import models
 
+@final
 class PathFinder:
-    FPS: Final[int] = 60
-    LEFT_CLICK: Final[int] = 1
-    RIGHT_CLICK: Final[int] = 3
-    
+    def __init__(self):
+        raise TypeError(f'{PathFinder.__name__} is a static class and cannot be instantiated')
+
     @staticmethod
     def _get_distance(start, goal) -> float:
         dx = float(start.x - goal.x)
@@ -22,58 +19,17 @@ class PathFinder:
         dist = float(sqrt(dx * dx + dy * dy))
 
         return dist
-
-    @staticmethod
-    def _clamp(point: models.Point, max: models.Point, min: models.Point) -> models.Point:
-        clampedPoint: list[int] = []
-        if point.x > max.x:
-            clampedPoint.append(max.x)
-        elif point.x < min.x:
-            clampedPoint.append(min.x)
-        else:
-            clampedPoint.append(point.x)
-
-        if point.y > max.y:
-            clampedPoint.append(max.y)
-        elif point.y < min.y:
-            clampedPoint.append(min.y)
-        else:
-            clampedPoint.append(point.y)
-
-        return models.Point(clampedPoint[0], clampedPoint[1])
     
     @staticmethod
-    def _mouse_position() -> models.Point:
-        pos = pygame.mouse.get_pos()
-        return models.Point(pos[0], pos[1])
-    
-    def __init__(self, surf: pygame.Surface, cell_dimensions: models.Dimensions, window_dimensions: models.Dimensions, diagonals: bool):
-        self._fps = pygame.time.Clock()
-        self._surf = surf
-        self._logger = logging.getLogger(PathFinder.__name__)
-
-        self.cell_dimensions = cell_dimensions
-        self.maze = maze.Maze(window_dimensions.width, window_dimensions.height)
-        self.startEnd: models.StartEnd = models.StartEnd(None, None)
-        self.pressed_keys: dict[int, pygame.event.Event] = {}
-        self.is_drawing: bool = False
-        self.diagonals: bool = diagonals
-        self.highlighted_cell: models.Point = models.Point(0, 0)  
-        self.last_highlighted_cell: Optional[models.Point] = None
-        self.window_dimensions = window_dimensions
-        
-        self._generate_maze()
-        self._handle_events()
-    
-    @timed('PathFinder._find_path')
-    def _find_path(self, startEnd: models.StartEnd) -> Optional[list[models.Node]]:
+    @timed('PathFinder.find_path')
+    def find_path(startEnd: models.StartEnd, tickFn: Optional[Callable] = None) -> Optional[list[models.Node]]:
         assert(startEnd.start is not None)
         assert(startEnd.end is not None)
         
         openlist: list[models.Node] = []
         closedlist: set[models.Cell] = set()
         
-        current = models.Node(cell=startEnd.start, parent=None, gCost=0, hCost=self._get_distance(startEnd.start, startEnd.end))
+        current = models.Node(cell=startEnd.start, parent=None, gCost=0, hCost=PathFinder._get_distance(startEnd.start, startEnd.end))
         heappush(openlist, current)
 
         while openlist:
@@ -97,134 +53,12 @@ class PathFinder:
                 if not cell.is_transversible() or cell in closedlist:
                     continue
                     
-                gcost = current.gCost + self._get_distance(current.cell, cell)
-                hcost = self._get_distance(cell, startEnd.end)
+                gcost = current.gCost + PathFinder._get_distance(current.cell, cell)
+                hcost = PathFinder._get_distance(cell, startEnd.end)
                 n = models.Node(cell, current, gcost, hcost)
                 heappush(openlist, n)
 
-            pygame.event.pump()
-            self._update_display()
+            if tickFn:
+                tickFn()
+
         return None
-
-    def _generate_random_start_end(self) -> None:
-        self.startEnd.reset()
-        self.startEnd.start, self.startEnd.end = \
-            (self.maze.get_random_transversible_point().mark_as_start(), \
-                self.maze.get_random_transversible_point().mark_as_end())
-        self._logger.debug(self.startEnd)
-    
-    def _reset_maze_colors(self, *, include_start_end=False) -> None:
-        self.maze.reopen_cells()
-        
-        if include_start_end:
-            self.startEnd.reset()
-
-    def _generate_maze(self) -> None:
-        self.maze.generate(self.cell_dimensions, self.diagonals)
-                
-    def _handle_events(self) -> None:
-        while True:
-            for event in pygame.event.get():
-                if event.type == QUIT:
-                    pygame.quit()
-                    sys.exit(0)
-                if event.type == MOUSEBUTTONDOWN:
-                    self.pressed_keys[event.button] = event
-                if event.type == KEYDOWN:
-                    self.pressed_keys[event.key] = event
-
-                self._compute_current_highlighted_cell()
-                self._handle_mouse_events()
-                self._handle_key_events()
-                self.pressed_keys.clear()
-                self._update_display()
-
-    def _handle_key_events(self) -> None:
-        if K_z in self.pressed_keys:
-            self.is_drawing = not self.is_drawing
-            if self.is_drawing:
-                self.maze.reopen_cells(openable_only=False)
-            else:
-                self._generate_maze()
-
-        if K_f in self.pressed_keys:
-            self._reset_maze_colors()
-
-            if not self.startEnd.is_populated():
-                self._generate_random_start_end()
-            
-            self._find_path(self.startEnd)
-        
-        if K_p in self.pressed_keys:
-            self._generate_random_start_end()
-
-        if K_m in self.pressed_keys:
-            self._generate_maze()
-
-        if K_c in self.pressed_keys:
-            self._reset_maze_colors(include_start_end=True)
-
-        if K_x in self.pressed_keys:
-            self._reset_maze_colors()
-
-        if K_SPACE in self.pressed_keys:
-            self.startEnd.progress(self.maze.get_cell(self.highlighted_cell.x, self.highlighted_cell.y))
-
-    def _handle_mouse_events(self): 
-        if self.LEFT_CLICK in self.pressed_keys:
-            event = self.pressed_keys[self.LEFT_CLICK]
-            self.startEnd.progress(self.maze.get_cell(event.pos[0], event.pos[1]))
-
-    def _compute_current_highlighted_cell(self) -> None:
-        if not self.is_drawing:
-            return
-        
-        if K_d in self.pressed_keys or K_RIGHT in self.pressed_keys:
-            self.highlighted_cell.x += self.cell_dimensions.width
-        elif K_s in self.pressed_keys or K_DOWN in self.pressed_keys:
-            self.highlighted_cell.y += self.cell_dimensions.height
-        elif K_a in self.pressed_keys or K_LEFT in self.pressed_keys:
-            self.highlighted_cell.x -= self.cell_dimensions.width
-        elif K_w in self.pressed_keys or K_UP in self.pressed_keys:
-            self.highlighted_cell.y -= self.cell_dimensions.height
-
-        self.highlighted_cell = self._clamp(self.highlighted_cell, \
-                                            models.Point(self.window_dimensions.width - self.cell_dimensions.width, \
-                                                    self.window_dimensions.height - self.cell_dimensions.height),
-                                             models.Point(0, 0))
-        
-        hcell: Optional[models.Cell] = self.maze.get_cell(self.highlighted_cell.x, self.highlighted_cell.y)
-        assert(hcell is not None)
-        
-        if K_v in self.pressed_keys:
-            hcell.mark_as_wall()
-
-        if self.RIGHT_CLICK in self.pressed_keys:
-            mouse_position = self._mouse_position()
-            mcell: Optional[models.Cell] = self.maze.get_cell(mouse_position.x, mouse_position.y)
-            assert(mcell is not None)
-            mcell.mark_as_wall()
-
-        if K_b in self.pressed_keys:
-            hcell.mark_as_open()
-    
-    def _update_display(self) -> None:
-        if self.is_drawing and self.last_highlighted_cell != self.highlighted_cell:
-            cell_to_highlight = self.maze.get_cell(self.highlighted_cell.x, self.highlighted_cell.y)
-            assert cell_to_highlight, 'Could not find cell to highlight'
-            cell_to_highlight.highlight()
-            
-            if self.last_highlighted_cell:
-                cell_to_unhighlight = self.maze.get_cell(self.last_highlighted_cell.x, self.last_highlighted_cell.y)
-                assert cell_to_unhighlight, 'Could not find cell to unhighlight'
-                cell_to_unhighlight.unhighlight()
-                
-        new_surf = self.maze.draw_surf(self.window_dimensions.width, \
-                                        self.window_dimensions.height)
-        if new_surf is not None:
-            self._surf.blit(new_surf, (0, 0))
-
-        self.last_highlighted_cell = self.highlighted_cell.copy()
-        
-        pygame.display.flip()
-        self._fps.tick(self.FPS)
