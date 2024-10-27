@@ -35,5 +35,7 @@ class State(Enum):
                 return Color.OPEN.value
             case State.WALL:
                 return Color.WALL.value
+            case State.HIGHLIGHTED:
+                return Color.HIGHLIGHTED.value
             case _:
                 raise ValueError('Invalid state')

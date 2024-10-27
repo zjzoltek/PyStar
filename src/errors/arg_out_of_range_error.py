@@ -32,7 +32,7 @@ class ArgOutOfRangeError(Exception):
         
         return '{left_bracket}{min},{max}{right_bracket}' \
                 .format(left_bracket=left_bracket, \
-                    min=self._min or self._INF, \
-                    max=self._max or self._INF, \
+                    min=self._minimum or self._INF, \
+                    max=self._maximum or self._INF, \
                     right_bracket=right_bracket)
         

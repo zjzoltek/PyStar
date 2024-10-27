@@ -68,10 +68,9 @@ class Screen:
     def _get_display_dimensions(self) -> Dimensions:
         while True:
             try:
-                itemValidator = Validator(MatchesType(int()), InRange(minimum=1, maximum=INF, inclusiveMin=True))
+                itemValidator = Validator(MatchesType(int()), InRange(ValueRange(minimum=1, maximum=INF, inclusiveMin=True)))
                 
-                args = self._console.request('Window size? Input width followed by height (e.g. "500 500")', Validator(HasLength(2)))
-            
+                args = self._console.request('Window size?')
                 for item in args:
                     itemValidator.validate(item)
                 
@@ -83,12 +82,12 @@ class Screen:
     def _get_cell_dimensions(self) -> Dimensions:
         while True:
             try:
-                args = self._console.request('Cell size? (e.g. "10")', Validator(HasLength(1)))
+                args = self._console.request('Cell size?', Validator(HasLength(1)))
         
-                Validator(MatchesType(int()), \
-                    InRange(minimum=1, maximum=INF, inclusiveMin=True)).validate(args[0])
+                size = Validator(MatchesType(int()), \
+                    InRange(ValueRange(minimum=1, maximum=INF, inclusiveMin=True))).validate(args[0])
                 
-                return Dimensions(int(args[0]), int(args[0]))
+                return Dimensions(size, size)
             except Exception as e:
                 self._console.err(str(e))
                 continue

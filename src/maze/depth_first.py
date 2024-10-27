@@ -47,8 +47,8 @@ class Maze(ICellStateListener):
     def get_cell(self, x: int, y: int) -> Cell | None:
         for row in self._cells:
             for cell in row:
-                if cell.x == int((x / self._height)) \
-                        and cell.y == int((y / self._width)):
+                if cell.x == int((x / cell.dimensions.height)) \
+                        and cell.y == int((y / cell.dimensions.height)):
                     return cell
         
         return None

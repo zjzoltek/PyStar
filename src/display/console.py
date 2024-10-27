@@ -11,7 +11,7 @@ class Console:
         self._prompt_end = prompt_end
         self._logger = logging.getLogger(Console.__name__)
     
-    def request(self, prompt: str, v: Optional[Validator] = None) -> list[str]:
+    def request(self, prompt: str, v: Optional[Validator[list[str]]] = None) -> list[str]:
         args = input(f'{prompt}{self._prompt_end}').split(' ')
         if v:
             v.validate(args)

@@ -103,6 +103,7 @@ class PathFinder:
                 heappush(openlist, n)
 
             pygame.event.pump()
+            self._update_display()
         return None
 
     def _generate_random_start_end(self) -> None:
@@ -184,7 +185,7 @@ class PathFinder:
             self.highlighted_cell.y += self.cell_dimensions.height
         elif K_a in self.pressed_keys or K_LEFT in self.pressed_keys:
             self.highlighted_cell.x -= self.cell_dimensions.width
-        elif K_w in self.pressed_keys or K_RIGHT in self.pressed_keys:
+        elif K_w in self.pressed_keys or K_UP in self.pressed_keys:
             self.highlighted_cell.y -= self.cell_dimensions.height
 
         self.highlighted_cell = self._clamp(self.highlighted_cell, \
@@ -198,7 +199,7 @@ class PathFinder:
         if K_v in self.pressed_keys:
             hcell.mark_as_wall()
 
-        if self.RIGHT_CLICK in self.pressed_keys and self.is_drawing:
+        if self.RIGHT_CLICK in self.pressed_keys:
             mouse_position = self._mouse_position()
             mcell: Optional[models.Cell] = self.maze.get_cell(mouse_position.x, mouse_position.y)
             assert(mcell is not None)
