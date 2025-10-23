@@ -49,7 +49,14 @@ class Screen:
             (self._window_dimensions.width, self._window_dimensions.height), \
                 pygame.HWSURFACE|pygame.DOUBLEBUF)
     
-                
+    def setup_for_test(self, window_dimensions: Dimensions, cell_dimensions: Dimensions, diagonals: bool):
+        self._window_dimensions = window_dimensions
+        self._cell_dimensions = cell_dimensions
+        self._diagonals = diagonals
+        self._surf = pygame.display.set_mode(\
+            (self._window_dimensions.width, self._window_dimensions.height), \
+                pygame.HWSURFACE|pygame.DOUBLEBUF)
+        
     def display_user_manual(self) -> None:
         self._console.out('Controls:')
         self._console.out('m - Re-Generate Maze')
@@ -70,11 +77,9 @@ class Screen:
     def _get_display_dimensions(self) -> Dimensions:
         while True:
             try:
-                itemValidator = Validator(MatchesType(int()), InRange(ValueRange(minimum=1, maximum=INF, inclusiveMin=True)))
-                
-                args = self._console.request('Window size?')
-                for item in args:
-                    itemValidator.validate(item)
+                item_validator = Validator((MatchesType(int())), InRange(ValueRange(minimum=1, maximum=INF, inclusiveMin=True)))
+                set_validator = Validator(HasLength(2))
+                args = self._console.request('Window size?', set_validator, item_validator)
                 
                 return Dimensions(int(args[0]), int(args[1]))
             except Exception as e:
@@ -84,11 +89,12 @@ class Screen:
     def _get_cell_dimensions(self) -> Dimensions:
         while True:
             try:
-                args = self._console.request('Cell size?', Validator(HasLength(1)))
+                item_validator = Validator(MatchesType(int()), \
+                    InRange(ValueRange(minimum=1, maximum=INF, inclusiveMin=True)))
+                set_validator = Validator(HasLength(1))
+                args = self._console.request('Cell size?', set_validator, item_validator)
         
-                size = Validator(MatchesType(int()), \
-                    InRange(ValueRange(minimum=1, maximum=INF, inclusiveMin=True))).validate(args[0])
-                
+                size = int(args[0])
                 return Dimensions(size, size)
             except Exception as e:
                 self._console.err(str(e))

@@ -8,4 +8,10 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, handlers=[ColorfulStreamHandler(sys.stdout)])
     pygame.init()
     pygame.key.set_repeat(500, 100)
-    Director().bootstrap().handle_events_indefinitely()
+
+    print("\n" + "=" * 60)
+    print("PyStar - Optimized Visualization Suite")
+    print("=" * 60)
+
+    director = Director().bootstrap()
+    director.handle_events_indefinitely()

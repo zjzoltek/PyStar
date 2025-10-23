@@ -7,7 +7,7 @@ from models.dimensions import Dimensions
 type _Cell = Cell
 
 class ICellStateListener(Protocol):
-    def on_cell_state_change(self) -> None:
+    def on_cell_state_change(self, cell: Optional['Cell'] = None) -> None:
         pass
     
 @dataclass
@@ -80,7 +80,7 @@ class Cell:
     
     def _set_state(self, state: State) -> None:
         if self.state != state:
-            self.maze.on_cell_state_change()
+            self.maze.on_cell_state_change(self)
         self.state = state
         
     def __repr__(self) -> str:

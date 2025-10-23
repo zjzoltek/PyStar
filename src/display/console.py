@@ -1,4 +1,5 @@
 from typing import Optional
+from collections import deque
 
 from log import logging
 from validation.has_length import HasLength
@@ -11,10 +12,12 @@ class Console:
         self._prompt_end = prompt_end
         self._logger = logging.getLogger(Console.__name__)
     
-    def request(self, prompt: str, v: Optional[Validator[list[str]]] = None) -> list[str]:
+    def request(self, prompt: str, set_validator: Optional[Validator[list[str]]] = None, item_validator: Optional[Validator[str]] = None) -> list[str]:
         args = input(f'{prompt}{self._prompt_end}').split(' ')
-        if v:
-            v.validate(args)
+        if set_validator:
+            set_validator.validate(args)
+        if item_validator:
+            deque(map(item_validator.validate, args), maxlen=0)
 
         return args
     

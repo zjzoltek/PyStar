@@ -22,21 +22,21 @@ class PathFinder:
     
     @staticmethod
     @timed('PathFinder.find_path')
-    def find_path(startEnd: models.StartEnd, tickFn: Optional[Callable] = None) -> Optional[list[models.Node]]:
-        assert(startEnd.start is not None)
-        assert(startEnd.end is not None)
-        
+    def find_path(endpoints: models.PathEndpoints, tickFn: Optional[Callable] = None) -> Optional[list[models.Node]]:
+        assert(endpoints.start is not None)
+        assert(endpoints.end is not None)
+
         openlist: list[models.Node] = []
         closedlist: set[models.Cell] = set()
-        
-        current = models.Node(cell=startEnd.start, parent=None, gCost=0, hCost=PathFinder._get_distance(startEnd.start, startEnd.end))
+
+        current = models.Node(cell=endpoints.start, parent=None, gCost=0, hCost=PathFinder._get_distance(endpoints.start, endpoints.end))
         heappush(openlist, current)
 
         while openlist:
             current = heappop(openlist)
             closedlist.add(current.cell)
-            
-            if current.cell.x == startEnd.end.x and current.cell.y == startEnd.end.y:
+
+            if current.cell.x == endpoints.end.x and current.cell.y == endpoints.end.y:
                 path = []
                 while current.parent is not None:
                     if not current.cell.is_terminator():
@@ -54,7 +54,7 @@ class PathFinder:
                     continue
                     
                 gcost = current.gCost + PathFinder._get_distance(current.cell, cell)
-                hcost = PathFinder._get_distance(cell, startEnd.end)
+                hcost = PathFinder._get_distance(cell, endpoints.end)
                 n = models.Node(cell, current, gcost, hcost)
                 heappush(openlist, n)
 
