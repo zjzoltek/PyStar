@@ -3,11 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from queue import Queue
 from time import perf_counter
-from typing import Optional, Set
+from typing import Optional, Set, TYPE_CHECKING
 
 import pygame
 
 import models
+
+if TYPE_CHECKING:
+    from maze.depth_first import Maze
 
 @dataclass(slots=True)
 class RenderBatch:
@@ -26,7 +29,7 @@ class IncrementalRenderer:
     Only redraws cells that have changed, dramatically improving performance.
     """
 
-    def __init__(self, surface: pygame.Surface):
+    def __init__(self, surface: pygame.Surface) -> None:
         self._surface = surface
         self._dirty_cells: Set[models.Cell] = set()
         self._render_queue: Queue[models.Cell] = Queue()
@@ -34,7 +37,7 @@ class IncrementalRenderer:
         self._last_render_time = 0.0
         self._render_interval = 1/120  # 120 FPS for smooth animation
         self._full_redraw_needed = True
-        self._cached_surface: Optional[pygame.Surface] = None
+        self._cached_surface: pygame.Surface
 
     def mark_cell_dirty(self, cell: models.Cell) -> None:
         """Mark a cell as needing redraw."""
@@ -51,7 +54,7 @@ class IncrementalRenderer:
 
     def render_maze(
         self,
-        maze: 'maze.Maze',
+        maze: Maze,
         width: int,
         height: int,
         force_immediate: bool = False
@@ -112,7 +115,7 @@ class IncrementalRenderer:
 
         return RenderBatch(self._cached_surface, dirty_rects)
 
-    def _render_full_maze(self, maze: 'maze.Maze', width: int, height: int) -> RenderBatch:
+    def _render_full_maze(self, maze: Maze, width: int, height: int) -> RenderBatch:
         """Render the entire maze from scratch."""
         self._cached_surface = pygame.Surface((width, height)).convert()
 
@@ -148,7 +151,7 @@ class VisualizationRenderer:
     of the pathfinding process without blocking the algorithm.
     """
 
-    def __init__(self, surface: pygame.Surface, fps: int = 60):
+    def __init__(self, surface: pygame.Surface, fps: int = 60) -> None:
         self._renderer = IncrementalRenderer(surface)
         self._surface = surface
         self._fps = fps
@@ -173,7 +176,7 @@ class VisualizationRenderer:
 
     def render_frame(
         self,
-        maze: 'maze.Maze',
+        maze: Maze,
         width: int,
         height: int
     ) -> Optional[RenderBatch]:
@@ -192,7 +195,7 @@ class VisualizationRenderer:
 
     def flush_queue(
         self,
-        maze: 'maze.Maze',
+        maze: Maze,
         width: int,
         height: int
     ) -> Optional[RenderBatch]:

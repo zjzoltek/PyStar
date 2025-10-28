@@ -1,6 +1,6 @@
 from enum import Enum
 
-from enums.color import *
+from enums.color import Color, RGB
 
 
 class State(Enum):

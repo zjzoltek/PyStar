@@ -1,10 +1,12 @@
-from typing import Optional, Any
-from validation.condition import *
+from typing import Optional, Any, TypeVar, Generic
+from validation.condition import Condition
 
-class Validator[T]:
+T = TypeVar('T')
+
+class Validator(Generic[T]):
     def __init__(self, *conditions: Condition[T, Exception]) -> None:
-        self._conditions: tuple[Condition[T, Exception], ...]  = tuple(conditions)
-        
+        self._conditions: tuple[Condition[T, Exception], ...] = tuple(conditions)
+
     def validate(self, value: T) -> Any:
         v: Any = value
         for c in self._conditions:
@@ -13,5 +15,5 @@ class Validator[T]:
                 raise optionalException
             else:
                 v = c.transform(v)
-        
+
         return v

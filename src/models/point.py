@@ -5,5 +5,5 @@ class Point():
     x: int
     y: int
     
-    def copy(self):
+    def copy(self) -> 'Point':
         return Point(self.x, self.y)

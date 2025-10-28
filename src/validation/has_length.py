@@ -3,7 +3,7 @@ from typing import Sequence, override, Optional, Any
 from errors import IncorrectNumberOfArgsError
 
 class HasLength(Condition[Sequence[Any], IncorrectNumberOfArgsError]):
-    def __init__(self, requiredLength):
+    def __init__(self, requiredLength: int) -> None:
         self._requiredLength = requiredLength
         
     @override

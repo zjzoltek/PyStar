@@ -3,7 +3,7 @@ from validation.condition import Condition
 from errors import InvalidArgValueError
 
 class IsIn(Condition[Any, InvalidArgValueError]):
-    def __init__(self, values: Collection[Any]):
+    def __init__(self, values: Collection[Any]) -> None:
         self._values = values
         
     @override

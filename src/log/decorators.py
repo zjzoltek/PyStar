@@ -1,9 +1,12 @@
 import functools
 import logging
-from typing import Callable, Optional
+from typing import Callable, TypeVar, ParamSpec
 from time import time
 
-def timed[**P, R](timer_name: str) -> Callable[[Callable[P, R]], Callable[P, R]]:
+P = ParamSpec('P')
+R = TypeVar('R')
+
+def timed(timer_name: str) -> Callable[[Callable[P, R]], Callable[P, R]]:
     def decorator(f: Callable[P, R]) -> Callable[P, R]:
         @functools.wraps(f)
         def inner(*args: P.args, **kwargs: P.kwargs) -> R:

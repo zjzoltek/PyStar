@@ -9,11 +9,11 @@ import models
 
 @final
 class PathFinder:
-    def __init__(self):
+    def __init__(self) -> None:
         raise TypeError(f'{PathFinder.__name__} is a static class and cannot be instantiated')
 
     @staticmethod
-    def _get_distance(start, goal) -> float:
+    def _get_distance(start: 'models.Cell', goal: 'models.Cell') -> float:
         dx = float(start.x - goal.x)
         dy = float(start.y - goal.y)
         dist = float(sqrt(dx * dx + dy * dy))

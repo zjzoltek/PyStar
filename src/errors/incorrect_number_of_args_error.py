@@ -8,10 +8,10 @@ class IncorrectNumberOfArgsError(Exception):
         self._received = received
         
     @override
-    def __str__(self):
+    def __str__(self) -> str:
         return f'Expected ({self._expected}) arguments, got ({self._received})'
-    
+
     @override
-    def __repr__(self):
+    def __repr__(self) -> str:
         return IncorrectNumberOfArgsError.__name__ \
             + f'({self._expected, self._received})'

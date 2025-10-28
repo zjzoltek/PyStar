@@ -1,6 +1,5 @@
 from enum import Enum
 
-from enums.color import *
 
 
 class PathUpdate(Enum):

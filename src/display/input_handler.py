@@ -10,7 +10,7 @@ class InputHandler:
     LEFT_CLICK = 1
     RIGHT_CLICK = 3
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._pressed_keys: Dict[int, Event] = {}
         self._drawing_mode: bool = False
         self._cursor_position: models.Point = models.Point(0, 0)

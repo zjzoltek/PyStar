@@ -13,7 +13,7 @@ from enums import PathUpdate
 @dataclass
 class PathfindingUpdate:
     """Represents a single update from the pathfinding algorithm."""
-    cell: models.Cell
+    cell: Optional[models.Cell]
     update_type: PathUpdate
     path: Optional[list[models.Node]] = None
 
@@ -25,7 +25,7 @@ class AsyncPathfinder:
     renders updates at its own pace.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._update_queue: queue.Queue[PathfindingUpdate] = queue.Queue()
         self._thread: Optional[threading.Thread] = None
         self._running = False
@@ -57,8 +57,10 @@ class AsyncPathfinder:
         self,
         endpoints: models.PathEndpoints,
         on_complete: Optional[Callable]
-    ) -> None:
+    ) -> list[models.Node]:
         """Run A* algorithm in background thread."""
+        assert endpoints.start, endpoints.end
+        
         from heapq import heappop, heappush
         from math import sqrt
 
@@ -84,7 +86,7 @@ class AsyncPathfinder:
 
             # Check if we reached the goal
             if current.cell == endpoints.end:
-                path = []
+                path: list[models.Node] = []
                 while current.parent is not None:
                     if not current.cell.is_terminator():
                         # Queue route update
@@ -123,9 +125,12 @@ class AsyncPathfinder:
         self._update_queue.put(
             PathfindingUpdate(None, PathUpdate.COMPLETE, None)
         )
+
         if on_complete:
             on_complete(None)
+            
         self._running = False
+        return []
 
     def process_updates(self, batch_size: int = 10) -> list[PathfindingUpdate]:
         """
@@ -164,7 +169,7 @@ class AsyncPathfinder:
     @property
     def is_running(self) -> bool:
         """Check if pathfinding is currently running."""
-        return self._thread and self._thread.is_alive()
+        return self._thread is not None and self._thread.is_alive()
 
     @property
     def has_updates(self) -> bool:

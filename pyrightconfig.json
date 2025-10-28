@@ -1,0 +1,9 @@
+{
+    "include": ["src"],
+    "reportMissingImports": "warning",
+    "reportMissingTypeStubs": "none",
+    "pythonVersion": "3.12",
+    "typeCheckingMode": "basic",
+    "stubPath": "./typings",
+    "reportUnusedImport": "warning"
+}

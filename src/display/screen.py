@@ -2,7 +2,7 @@ from typing import Optional, Self
 
 import pygame
 
-from display.console import *
+from display.console import Console
 from models.dimensions import Dimensions
 from models.value_range import INF, ValueRange
 from validation.has_length import HasLength
@@ -49,7 +49,7 @@ class Screen:
             (self._window_dimensions.width, self._window_dimensions.height), \
                 pygame.HWSURFACE|pygame.DOUBLEBUF)
     
-    def setup_for_test(self, window_dimensions: Dimensions, cell_dimensions: Dimensions, diagonals: bool):
+    def setup_for_test(self, window_dimensions: Dimensions, cell_dimensions: Dimensions, diagonals: bool) -> None:
         self._window_dimensions = window_dimensions
         self._cell_dimensions = cell_dimensions
         self._diagonals = diagonals
@@ -77,7 +77,7 @@ class Screen:
     def _get_display_dimensions(self) -> Dimensions:
         while True:
             try:
-                item_validator = Validator((MatchesType(int())), InRange(ValueRange(minimum=1, maximum=INF, inclusiveMin=True)))
+                item_validator = Validator(MatchesType(int()), InRange(ValueRange(minimum=1, maximum=INF, inclusiveMin=True)))
                 set_validator = Validator(HasLength(2))
                 args = self._console.request('Window size?', set_validator, item_validator)
                 

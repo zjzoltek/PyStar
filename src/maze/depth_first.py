@@ -1,10 +1,13 @@
 import random
-from typing import Optional
+from typing import Optional, Callable, TYPE_CHECKING
 import pygame
 
 from log import timed
 from models import Cell, Dimensions, ICellStateListener
 from display.incremental_renderer import RenderBatch, VisualizationRenderer
+
+if TYPE_CHECKING:
+    from maze.async_maze_generator import MazeGenerationUpdate
 
 class Maze(ICellStateListener):
     def __init__(self, width: int, height: int) -> None:
@@ -14,11 +17,40 @@ class Maze(ICellStateListener):
         self._needs_write: bool = False
         self._renderer: Optional[VisualizationRenderer] = None
         self._changed_cells: set[Cell] = set()
+        self._cell_width: int = 0
+        self._cell_height: int = 0
     
-    @timed('Maze.generate')
-    def generate(self, cell_size: Dimensions, diagonals: bool) -> None:
-        self._generate_cells(cell_size, diagonals)
-        self._populate_cells()
+    def generate_async(
+        self,
+        cell_size: Dimensions,
+        diagonals: bool,
+        on_complete: Optional[Callable[[bool], None]] = None,
+        on_progress: Optional[Callable[['MazeGenerationUpdate'], None]] = None
+    ) -> None:
+        """Generate maze asynchronously with progress callbacks."""
+        from maze.async_maze_generator import AsyncMazeGenerator
+
+        if not hasattr(self, '_async_generator'):
+            self._async_generator = AsyncMazeGenerator()
+
+        self._async_generator.generate_maze_async(
+            self, cell_size, diagonals, on_complete, on_progress
+        )
+
+    def get_generation_updates(self, batch_size: int = 10):
+        """Get pending updates from async maze generation."""
+        if hasattr(self, '_async_generator'):
+            return self._async_generator.process_updates(batch_size)
+        return []
+
+    def is_generating(self) -> bool:
+        """Check if maze is currently being generated asynchronously."""
+        return hasattr(self, '_async_generator') and self._async_generator.is_running
+
+    def cancel_generation(self) -> None:
+        """Cancel ongoing maze generation."""
+        if hasattr(self, '_async_generator'):
+            self._async_generator.cancel()
 
     def set_renderer(self, surface: pygame.Surface, fps: int = 60) -> None:
         """Set up the visualization renderer."""
@@ -64,13 +96,28 @@ class Maze(ICellStateListener):
         return random.choice(random.choice(all_cells))
        
     def get_cell(self, x: int, y: int) -> Cell | None:
-        for row in self._cells:
-            for cell in row:
-                if cell.x == int((x / cell.dimensions.height)) \
-                        and cell.y == int((y / cell.dimensions.height)):
-                    return cell
-        
-        return None
+        """
+        Get cell at pixel coordinates (x, y).
+        Optimized to use direct array indexing instead of linear search.
+        """
+        if not self._cells or self._cell_width == 0 or self._cell_height == 0:
+            return None
+
+        # Check for negative input coordinates first
+        if x < 0 or y < 0:
+            return None
+
+        # Convert pixel coordinates to grid coordinates
+        grid_x = int(x / self._cell_width)
+        grid_y = int(y / self._cell_height)
+
+        # Check bounds
+        if (grid_x >= len(self._cells) or
+            grid_y >= len(self._cells[0])):
+            return None
+
+        # Direct array access - O(1) instead of O(n²)
+        return self._cells[grid_x][grid_y]
                 
     def on_cell_state_change(self, cell: Optional[Cell] = None) -> None:
         """Called when a cell's state changes."""
@@ -78,33 +125,11 @@ class Maze(ICellStateListener):
         if cell:
             self._changed_cells.add(cell)
        
-    def _populate_cells(self) -> None:
-        """Generate maze using depth-first search."""
-        unvisited_cells = set([cell for column in self._cells for cell in column])
-        stack: list[Cell] = []
-        current = self._cells[0][0]
-
-        while unvisited_cells:
-            current.mark_as_open()
-            if current in unvisited_cells:
-                unvisited_cells.remove(current)
-
-            neighbors = current.get_unvisited_neighbors()
-            if len(neighbors) > 0:
-                stack.append(current)
-                current = random.choice(neighbors)
-            elif len(stack) > 0:
-                current = stack.pop()
-            else:
-                break
-
-        # Mark full redraw needed after maze generation
-        if self._renderer:
-            self._renderer.mark_full_redraw()
-
     def _generate_cells(self, cell_size: Dimensions, diagonals: bool) -> None:
         w = int(self._width / cell_size.width)
         h = int(self._height / cell_size.height)
+        self._cell_width = cell_size.width
+        self._cell_height = cell_size.height
         self._cells = [[Cell(row, column, cell_size, self)
                       for row in range(h)]
                       for column in range(w)]

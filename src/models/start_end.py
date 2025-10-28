@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from typing import Optional
-from models.cell import *
+from models.cell import Cell
 
 @dataclass
 class StartEnd:
-    start: Optional[Cell]
-    end: Optional[Cell]
+    start: Optional[Cell] = None
+    end: Optional[Cell] = None
     
     def is_populated(self) -> bool:
         return self.start is not None and self.end is not None

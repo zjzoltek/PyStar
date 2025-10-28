@@ -8,5 +8,5 @@ class ValueRange(TypedDict):
     inclusiveMin: NotRequired[bool]
     inclusiveMax: NotRequired[bool]
     
-def unpack(r: ValueRange):
+def unpack(r: ValueRange) -> tuple[Any, Any, bool, bool]:
     return (r['minimum'], r['maximum'], r.get('inclusiveMin', False), r.get('inclusiveMax', True))
