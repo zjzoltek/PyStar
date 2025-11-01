@@ -2,12 +2,11 @@
 Asynchronous maze generation implementation that decouples algorithm execution from rendering.
 """
 
-import threading
-import queue
 import random
 from typing import Optional, Callable, TYPE_CHECKING
 from dataclasses import dataclass
 from models import Cell, Dimensions
+from maze.async_operation_manager import AsyncOperationManager
 
 if TYPE_CHECKING:
     from maze.depth_first import Maze
@@ -24,18 +23,14 @@ class MazeGenerationUpdate:
     is_complete: bool = False
 
 
-class AsyncMazeGenerator:
+class AsyncMazeGenerator(AsyncOperationManager[MazeGenerationUpdate]):
     """
     Runs maze generation in a separate thread and communicates updates via queue.
     This allows the algorithm to run at full speed while the main thread
     renders updates and shows progress at its own pace.
-    """
 
-    def __init__(self):
-        self._update_queue: queue.Queue[MazeGenerationUpdate] = queue.Queue()
-        self._thread: Optional[threading.Thread] = None
-        self._running = False
-        self._cancel_requested = False
+    Inherits thread management, queue handling, and cancellation from AsyncOperationManager.
+    """
 
     def generate_maze_async(
         self,
@@ -55,17 +50,11 @@ class AsyncMazeGenerator:
             on_complete: Callback when generation completes (receives success bool)
             on_progress: Callback for progress updates
         """
-        if self._thread and self._thread.is_alive():
-            return  # Already running
-
-        self._running = True
-        self._cancel_requested = False
-        self._thread = threading.Thread(
-            target=self._run_maze_generation,
+        self.start_async(
+            target_method=self._run_maze_generation,
             args=(maze, cell_size, diagonals, on_complete, on_progress),
-            daemon=True
+            name="MazeGeneration"
         )
-        self._thread.start()
 
     def _run_maze_generation(
         self,
@@ -78,7 +67,7 @@ class AsyncMazeGenerator:
         """Run maze generation algorithm in background thread."""
         try:
             # Generate cell grid first
-            self._update_queue.put(MazeGenerationUpdate(
+            self._queue_update(MazeGenerationUpdate(
                 cell=None,
                 progress=0.0,
                 total_cells=0,
@@ -92,7 +81,7 @@ class AsyncMazeGenerator:
 
             total_cells = sum(len(column) for column in maze._cells)
 
-            self._update_queue.put(MazeGenerationUpdate(
+            self._queue_update(MazeGenerationUpdate(
                 cell=None,
                 progress=0.05,
                 total_cells=total_cells,
@@ -108,7 +97,7 @@ class AsyncMazeGenerator:
             visited_count = 0
             update_frequency = max(1, total_cells // 100)  # Update at least 100 times
 
-            while unvisited_cells and self._running and not self._cancel_requested:
+            while unvisited_cells and self._should_continue():
                 current.mark_as_open()
                 if current in unvisited_cells:
                     unvisited_cells.remove(current)
@@ -117,7 +106,7 @@ class AsyncMazeGenerator:
                     # Send progress update periodically
                     if visited_count % update_frequency == 0 or visited_count == total_cells:
                         progress = visited_count / total_cells
-                        self._update_queue.put(MazeGenerationUpdate(
+                        self._queue_update(MazeGenerationUpdate(
                             cell=current,
                             progress=progress,
                             total_cells=total_cells,
@@ -147,8 +136,8 @@ class AsyncMazeGenerator:
                     break
 
             # Signal completion
-            success = not self._cancel_requested
-            self._update_queue.put(MazeGenerationUpdate(
+            success = not self.is_cancelled
+            self._queue_update(MazeGenerationUpdate(
                 cell=None,
                 progress=1.0,
                 total_cells=total_cells,
@@ -162,7 +151,7 @@ class AsyncMazeGenerator:
 
         except Exception as e:
             # Handle any errors during generation
-            self._update_queue.put(MazeGenerationUpdate(
+            self._queue_update(MazeGenerationUpdate(
                 cell=None,
                 progress=0.0,
                 total_cells=0,
@@ -175,43 +164,5 @@ class AsyncMazeGenerator:
         finally:
             self._running = False
 
-    def process_updates(self, batch_size: int = 10) -> list[MazeGenerationUpdate]:
-        """
-        Process pending updates from the maze generation thread.
-
-        Args:
-            batch_size: Maximum number of updates to process
-
-        Returns:
-            List of updates to apply
-        """
-        updates = []
-        try:
-            for _ in range(batch_size):
-                update = self._update_queue.get_nowait()
-                updates.append(update)
-        except queue.Empty:
-            pass
-
-        return updates
-
-    def cancel(self) -> None:
-        """Cancel the maze generation."""
-        self._cancel_requested = True
-        self._running = False
-
-    def stop(self) -> None:
-        """Stop the maze generation thread."""
-        self._running = False
-        if self._thread:
-            self._thread.join(timeout=1.0)
-
-    @property
-    def is_running(self) -> bool:
-        """Check if maze generation is currently running."""
-        return self._thread is not None and self._thread.is_alive()
-
-    @property
-    def has_updates(self) -> bool:
-        """Check if there are pending updates."""
-        return not self._update_queue.empty()
+    # All update processing, cancellation, and status checking methods
+    # are inherited from AsyncOperationManager

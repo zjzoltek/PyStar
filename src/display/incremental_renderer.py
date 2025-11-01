@@ -85,7 +85,6 @@ class IncrementalRenderer:
         )
 
         if should_render and not self._render_queue.empty():
-            # Process all queued cells
             while not self._render_queue.empty():
                 cell = self._render_queue.get()
                 self._dirty_cells.add(cell)
@@ -101,7 +100,6 @@ class IncrementalRenderer:
         dirty_rects: list[pygame.Rect] = []
         seen_rects: set[tuple[int, int, int, int]] = set()
 
-        # Render only dirty cells
         for cell in self._dirty_cells:
             rect = self._render_cell(cell, self._cached_surface)
             key = (rect.x, rect.y, rect.width, rect.height)
@@ -109,7 +107,6 @@ class IncrementalRenderer:
                 seen_rects.add(key)
                 dirty_rects.append(rect)
 
-        # Clear dirty cells and update render time
         self._dirty_cells.clear()
         self._last_render_time = current_time
 
@@ -145,62 +142,3 @@ class IncrementalRenderer:
         return rect
 
 
-class VisualizationRenderer:
-    """
-    Special renderer for algorithm visualization that allows smooth animation
-    of the pathfinding process without blocking the algorithm.
-    """
-
-    def __init__(self, surface: pygame.Surface, fps: int = 60) -> None:
-        self._renderer = IncrementalRenderer(surface)
-        self._surface = surface
-        self._fps = fps
-        self._frame_time = 1.0 / fps
-        self._visualization_speed = 1.0  # Speed multiplier
-        self._cells_per_frame = 1  # How many cells to process per frame
-
-    def set_visualization_speed(self, speed: float) -> None:
-        """
-        Set the visualization speed multiplier.
-        1.0 = normal speed, 2.0 = 2x speed, 0.5 = half speed
-        """
-        self._visualization_speed = max(0.1, min(10.0, speed))
-        self._cells_per_frame = max(1, int(speed))
-
-    def visualize_cell_change(self, cell: models.Cell) -> None:
-        """
-        Add a cell change to the visualization queue.
-        This is called by the pathfinding algorithm.
-        """
-        self._renderer.add_to_render_queue(cell)
-
-    def render_frame(
-        self,
-        maze: Maze,
-        width: int,
-        height: int
-    ) -> Optional[RenderBatch]:
-        """
-        Render a single frame of the visualization.
-        Should be called from the main game loop.
-        """
-        return self._renderer.render_maze(
-            maze, width, height,
-            force_immediate=False
-        )
-
-    def mark_full_redraw(self) -> None:
-        """Mark that a full redraw is needed."""
-        self._renderer.mark_full_redraw()
-
-    def flush_queue(
-        self,
-        maze: Maze,
-        width: int,
-        height: int
-    ) -> Optional[RenderBatch]:
-        """Force render all queued changes immediately."""
-        return self._renderer.render_maze(
-            maze, width, height,
-            force_immediate=True
-        )

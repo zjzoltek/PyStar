@@ -1,4 +1,4 @@
-from typing import Optional, Self
+from typing import Optional
 
 import pygame
 
@@ -65,6 +65,7 @@ class Screen:
         self._console.out('c - Clear maze colors and reset start and end points')
         self._console.out('x - Clear path, but not start and end colors')
         self._console.out('z - Toggle drawboard')
+        self._console.out('q | ESCAPE - Stop maze generation')
         
     def _get_diagonals(self) -> bool:
         while True:
