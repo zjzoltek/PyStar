@@ -89,11 +89,9 @@ class IncrementalRenderer:
                 cell = self._render_queue.get()
                 self._dirty_cells.add(cell)
 
-        # If no dirty cells, return cached surface if available
         if not self._dirty_cells:
             return None
 
-        # Create surface if needed
         if self._cached_surface is None:
             self._cached_surface = pygame.Surface((width, height)).convert()
 

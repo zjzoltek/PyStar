@@ -8,9 +8,7 @@ import queue
 from typing import Optional, Callable, Generic, TypeVar
 from abc import ABC
 
-# Type variable for the update type each implementation will use
 UpdateType = TypeVar('UpdateType')
-
 
 class AsyncOperationManager(Generic[UpdateType], ABC):
     """
@@ -46,7 +44,7 @@ class AsyncOperationManager(Generic[UpdateType], ABC):
             name: Name for the thread (for debugging)
         """
         if self._thread and self._thread.is_alive():
-            return  # Already running
+            return
 
         self._running = True
         self._cancel_requested = False

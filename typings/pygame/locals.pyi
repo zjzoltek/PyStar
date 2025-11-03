@@ -5,6 +5,7 @@ Pygame locals module constants for wildcard imports.
 # Event types
 QUIT: int
 KEYDOWN: int
+KEYUP: int
 MOUSEBUTTONDOWN: int
 
 # Surface flags

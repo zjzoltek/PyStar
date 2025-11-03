@@ -1,8 +1,3 @@
-"""
-Asynchronous pathfinding implementation that decouples algorithm execution from rendering.
-Moved from display module to maze module for better cohesion.
-"""
-
 from typing import Optional, Callable
 from dataclasses import dataclass
 import models
@@ -12,33 +7,17 @@ from maze.async_operation_manager import AsyncOperationManager
 
 @dataclass
 class PathfindingUpdate:
-    """Represents a single update from the pathfinding algorithm."""
     cell: Optional[models.Cell]
     update_type: PathUpdate
     path: Optional[list[models.Node]] = None
 
 
 class AsyncPathfinder(AsyncOperationManager[PathfindingUpdate]):
-    """
-    Runs pathfinding in a separate thread and communicates updates via queue.
-    This allows the algorithm to run at full speed while the main thread
-    renders updates at its own pace.
-
-    Inherits thread management, queue handling, and cancellation from AsyncOperationManager.
-    """
-
     def find_path_async(
         self,
         endpoints: models.PathEndpoints,
         on_complete: Optional[Callable[[Optional[list[models.Node]]], None]] = None
     ) -> None:
-        """
-        Start pathfinding in a background thread.
-
-        Args:
-            endpoints: Start and end points for pathfinding
-            on_complete: Callback when pathfinding completes
-        """
         self.start_async(
             target_method=self._run_pathfinding,
             args=(endpoints, on_complete),
@@ -50,7 +29,6 @@ class AsyncPathfinder(AsyncOperationManager[PathfindingUpdate]):
         endpoints: models.PathEndpoints,
         on_complete: Optional[Callable]
     ) -> list[models.Node]:
-        """Run A* algorithm in background thread."""
         assert endpoints.start and endpoints.end
 
         from heapq import heappop, heappush
@@ -76,19 +54,16 @@ class AsyncPathfinder(AsyncOperationManager[PathfindingUpdate]):
             current = heappop(openlist)
             closedlist.add(current.cell)
 
-            # Check if we reached the goal
             if current.cell == endpoints.end:
                 path: list[models.Node] = []
                 while current.parent is not None:
                     if not current.cell.is_terminator():
-                        # Queue route update
                         self._queue_update(
                             PathfindingUpdate(current.cell, PathUpdate.ROUTE)
                         )
                     path.append(current)
                     current = current.parent
 
-                # Signal completion
                 self._queue_update(
                     PathfindingUpdate(None, PathUpdate.COMPLETE, path)
                 )
@@ -97,13 +72,11 @@ class AsyncPathfinder(AsyncOperationManager[PathfindingUpdate]):
                 self._running = False
                 return path
 
-            # Mark cell as searched
             if not current.cell.is_terminator():
                 self._queue_update(
                     PathfindingUpdate(current.cell, PathUpdate.SEARCHED)
                 )
 
-            # Explore neighbors
             for cell in current.cell.neighbors:
                 if not cell.is_transversible() or cell in closedlist:
                     continue
@@ -113,7 +86,6 @@ class AsyncPathfinder(AsyncOperationManager[PathfindingUpdate]):
                 n = models.Node(cell, current, gcost, hcost)
                 heappush(openlist, n)
 
-        # No path found
         self._queue_update(
             PathfindingUpdate(None, PathUpdate.COMPLETE, None)
         )
@@ -125,19 +97,8 @@ class AsyncPathfinder(AsyncOperationManager[PathfindingUpdate]):
         return []
 
     def process_updates(self, batch_size: int = 10) -> list[PathfindingUpdate]:
-        """
-        Process pending updates from the pathfinding thread.
-        Overridden to apply updates directly to cells.
-
-        Args:
-            batch_size: Maximum number of updates to process
-
-        Returns:
-            List of updates to apply
-        """
         updates = super().process_updates(batch_size)
 
-        # Apply the updates to cells
         for update in updates:
             if update.cell:
                 if update.update_type == PathUpdate.SEARCHED:

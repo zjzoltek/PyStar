@@ -12,6 +12,7 @@ class InputHandler:
 
     def __init__(self) -> None:
         self._pressed_keys: Dict[int, Event] = {}
+        self._processed_keys: set[int] = set()  # Track keys already processed this frame cycle
         self._drawing_mode: bool = False
         self._cursor_position: models.Point = models.Point(0, 0)
         self._last_cursor_position: Optional[models.Point] = None
@@ -22,6 +23,10 @@ class InputHandler:
             self._pressed_keys[event.button] = event
         elif event.type == KEYDOWN:
             self._pressed_keys[event.key] = event
+        elif event.type == KEYUP:
+            # When key is released, allow it to be processed again
+            if event.key in self._processed_keys:
+                self._processed_keys.remove(event.key)
 
     def clear_pressed_keys(self) -> None:
         """Clear the pressed keys buffer."""
@@ -30,6 +35,17 @@ class InputHandler:
     def is_key_pressed(self, key: int) -> bool:
         """Check if a specific key was pressed."""
         return key in self._pressed_keys
+
+    def is_key_pressed_once(self, key: int) -> bool:
+        """
+        Check if a specific key was pressed and hasn't been processed yet.
+        Marks the key as processed to prevent duplicate handling from key repeat.
+        Use this for one-shot actions like triggering maze generation or pathfinding.
+        """
+        if key in self._pressed_keys and key not in self._processed_keys:
+            self._processed_keys.add(key)
+            return True
+        return False
 
     def get_mouse_event(self, button: int) -> Optional[Event]:
         """Get mouse event for a specific button."""

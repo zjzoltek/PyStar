@@ -1,5 +1,5 @@
 import sys
-from typing import Final, Self, TYPE_CHECKING
+from typing import Final, Self
 
 import pygame
 from pygame.locals import *
@@ -8,9 +8,6 @@ from display.input_handler import InputHandler
 import maze
 from log import logging
 import models
-
-if TYPE_CHECKING:
-    from maze.async_maze_generator import MazeGenerationUpdate
 
 class Director:
     FPS: Final[int] = 60
@@ -61,24 +58,23 @@ class Director:
 
                 self._input_handler.process_event(event) # type: ignore
 
-            skip_tick = False
+            path_updates = self._maze.get_pathfinding_updates(self._updates_per_frame)
+            for update in path_updates:
+                self._maze.on_cell_state_change(update.cell)
 
-            # Process async pathfinding updates
-            if self._maze.is_pathfinding():
-                updates = self._maze.get_pathfinding_updates(self._updates_per_frame)
-                if updates:
-                    self._maze.on_cell_state_change()
-                skip_tick = self._maze.has_pathfinding_updates()
-
-            # Process maze generation updates (mainly for completion detection)
-            if self._maze.is_generating():
-                maze_updates = self._maze.get_generation_updates(self._updates_per_frame)
-                for update in maze_updates:
-                    self._maze_generation_message = update.message
-                    self._maze_generation_progress = update.progress
-                    self._updates_per_frame
-                skip_tick = skip_tick or self._generating_maze
-
+            maze_updates = self._maze.get_generation_updates(self._updates_per_frame)
+            if maze_updates:
+                update = maze_updates.pop()
+                self._maze_generation_message = update.message
+                self._maze_generation_progress = update.progress
+                
+                if self._maze._renderer and update.is_complete:
+                    self._maze._renderer.mark_full_redraw()
+                else:
+                    self._maze.on_cell_state_change(update.cell)
+            
+            skip_tick = self._maze.has_async_updates()
+            
             # Handle input only if not generating maze (to prevent interference)
             if not self._maze.is_generating():
                 self._update_cursor_for_drawing_mode()
@@ -87,8 +83,8 @@ class Director:
             else:
                 # Only check for cancel keys if they were pressed during generation
                 # (not if they were already pressed before generation started)
-                if (self._input_handler.is_key_pressed(K_q) or
-                    self._input_handler.is_key_pressed(K_ESCAPE)):
+                if (self._input_handler.is_key_pressed_once(K_q) or
+                    self._input_handler.is_key_pressed_once(K_ESCAPE)):
                     self._maze.cancel_generation()
 
             self._input_handler.clear_pressed_keys()
@@ -108,76 +104,45 @@ class Director:
 
     def _generate_maze(self) -> None:
         """Generate maze using async method for better UI responsiveness."""
-        if self._generating_maze:
+        if self._maze.is_generating():
             self._maze.cancel_generation()
-            self._generating_maze = False
             return
 
-        def on_generation_complete(success: bool) -> None:
-            self._generating_maze = False
-            if success:
-                self._maze_generation_message = "Maze generation complete!"
-                self._logger.info("Maze generation completed successfully")
-                if self._maze._renderer:
-                    self._maze._renderer.mark_full_redraw()
-            else:
-                self._maze_generation_message = "Maze generation cancelled"
-                self._logger.info("Maze generation was cancelled")
-
-        def on_generation_progress(update: 'MazeGenerationUpdate') -> None:
-            """Real-time progress callback from the generation thread."""
-            # Update progress state immediately (not waiting for main loop)
-            self._maze_generation_progress = update.progress
-            self._maze_generation_message = update.message
-
-            # Log significant progress milestones to console
-            progress_percent = int(update.progress * 100)
-            if progress_percent > 0:
-                self._logger.info(f"Maze generation progress: {progress_percent}% ({update.visited_cells}/{update.total_cells} cells)")
-
-            # Force a quick UI update for immediate visual feedback
-            if update.cell:
-                self._maze.on_cell_state_change(update.cell)
-
-        self._generating_maze = True
-        self._maze_generation_progress = 0.0
         self._maze_generation_message = "Starting maze generation..."
         self._logger.info("Starting async maze generation")
-
-        # Clear any previously pressed keys to prevent immediate cancellation
         self._input_handler.clear_pressed_keys()
 
         self._maze.generate_async(
             self._screen.cell_dimensions,
-            self._screen.diagonals,
-            on_complete=on_generation_complete,
-            on_progress=on_generation_progress
+            self._screen.diagonals
         )
 
     def _handle_key_events(self) -> None:
-        if self._input_handler.is_key_pressed(K_z):
+        # Use is_key_pressed_once for one-shot actions to prevent key repeat issues
+        if self._input_handler.is_key_pressed_once(K_z):
             self._input_handler.drawing_mode = not self._input_handler.drawing_mode
             if self._input_handler.drawing_mode:
                 self._maze.reopen_cells(openable_only=False)
             else:
                 self._generate_maze()
 
-        if self._input_handler.is_key_pressed(K_f):
+        if self._input_handler.is_key_pressed_once(K_f):
+            self._path_endpoints.clear()
             self._run_pathfinding()
-        
-        if self._input_handler.is_key_pressed(K_p):
+
+        if self._input_handler.is_key_pressed_once(K_p):
             self._generate_random_start_end()
 
-        if self._input_handler.is_key_pressed(K_m):
+        if self._input_handler.is_key_pressed_once(K_m):
             self._generate_maze()
 
-        if self._input_handler.is_key_pressed(K_c):
+        if self._input_handler.is_key_pressed_once(K_c):
             self._reset_maze_colors(include_start_end=True)
 
-        if self._input_handler.is_key_pressed(K_x):
+        if self._input_handler.is_key_pressed_once(K_x):
             self._reset_maze_colors()
 
-        if self._input_handler.is_key_pressed(K_SPACE):
+        if self._input_handler.is_key_pressed_once(K_SPACE):
             pos = self._input_handler.cursor_position
             self._path_endpoints.select_cell(self._maze.get_cell(pos.x, pos.y))
 
@@ -187,21 +152,18 @@ class Director:
             self._path_endpoints.select_cell(self._maze.get_cell(event.pos[0], event.pos[1]))
 
     def _run_pathfinding(self) -> None:
-        """Run pathfinding using the active visualization mode."""
         self._reset_maze_colors()
 
         if not self._path_endpoints.is_complete():
             self._generate_random_start_end()
 
         self._maze.find_path_async(self._path_endpoints,
-                                   on_complete=lambda path: self._logger.debug(f'PATH (async): {path}'))
+                                   on_complete=lambda _: self._logger.debug(f'Pathfinding complete'))
 
     def _update_cursor_for_drawing_mode(self) -> None:
-        """Update cursor position and handle drawing mode actions."""
         if not self._input_handler.drawing_mode:
             return
 
-        # Calculate cursor movement
         delta_x = delta_y = 0
         cell_width = self._screen.cell_dimensions.width
         cell_height = self._screen.cell_dimensions.height
@@ -215,7 +177,6 @@ class Director:
         elif self._input_handler.is_key_pressed(K_w) or self._input_handler.is_key_pressed(K_UP):
             delta_y = -cell_height
 
-        # Update cursor position with bounds
         max_point = models.Point(
             self._screen.window_dimensions.width - cell_width,
             self._screen.window_dimensions.height - cell_height
@@ -223,16 +184,15 @@ class Director:
         min_point = models.Point(0, 0)
         self._input_handler.update_cursor_position(delta_x, delta_y, max_point, min_point)
 
-        # Handle cell modifications
         pos = self._input_handler.cursor_position
         cell = self._maze.get_cell(pos.x, pos.y)
         if cell:
-            if self._input_handler.is_key_pressed(K_v):
+            # Use is_key_pressed_once for placement to avoid rapid-fire placement
+            if self._input_handler.is_key_pressed_once(K_v):
                 cell.mark_as_wall()
-            elif self._input_handler.is_key_pressed(K_b):
+            elif self._input_handler.is_key_pressed_once(K_b):
                 cell.mark_as_open()
 
-        # Handle right-click wall drawing
         right_click = self._input_handler.get_mouse_event(InputHandler.RIGHT_CLICK)
         if right_click:
             mouse_cell = self._maze.get_cell(right_click.pos[0], right_click.pos[1])
@@ -240,19 +200,11 @@ class Director:
                 mouse_cell.mark_as_wall()
     
     def _update_display(self, *, skip_tick: bool = False) -> None:
-        """Update the display with current maze state.
-
-        Args:
-            skip_tick: When True, do not call fps.tick(); allows unthrottled refresh
-                while still executing the full render pipeline.
-        """
-        # Handle cursor highlighting in drawing mode
         if self._input_handler.drawing_mode:
             current_pos = self._input_handler.cursor_position
             last_pos = self._input_handler.last_cursor_position
 
             if last_pos != current_pos:
-                # Highlight new cell
                 cell_to_highlight = self._maze.get_cell(current_pos.x, current_pos.y)
                 if cell_to_highlight:
                     cell_to_highlight.highlight()
@@ -265,7 +217,6 @@ class Director:
 
                 self._input_handler.last_cursor_position = current_pos.copy()
 
-        # Render maze surface
         render_batch = self._maze.draw_surf(
             self._screen.window_dimensions.width,
             self._screen.window_dimensions.height
@@ -276,7 +227,6 @@ class Director:
             if render_batch.rects:
                 pygame.display.update(render_batch.rects)
 
-        # Draw progress bar if maze is generating
         if self._maze.is_generating():
             self._draw_progress_overlay()
 
