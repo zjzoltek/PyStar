@@ -16,7 +16,8 @@ class AsyncPathfinder(AsyncOperationManager[PathfindingUpdate]):
     def find_path_async(
         self,
         endpoints: models.PathEndpoints,
-        on_complete: Optional[Callable[[Optional[list[models.Node]]], None]] = None
+        on_complete: Optional[Callable[[
+            Optional[list[models.Node]]], None]] = None
     ) -> None:
         self.start_async(
             target_method=self._run_pathfinding,

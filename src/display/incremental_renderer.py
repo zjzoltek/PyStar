@@ -12,6 +12,7 @@ import models
 if TYPE_CHECKING:
     from maze.depth_first import Maze
 
+
 @dataclass(slots=True)
 class RenderBatch:
     """Result of an incremental render pass."""
@@ -138,5 +139,3 @@ class IncrementalRenderer:
             rect
         )
         return rect
-
-

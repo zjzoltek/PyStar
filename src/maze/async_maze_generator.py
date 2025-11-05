@@ -69,11 +69,11 @@ class AsyncMazeGenerator(AsyncOperationManager[MazeGenerationUpdate]):
                 message="Initializing maze structure...",
                 is_complete=False
             ))
-            
+
             maze._generate_cells(cell_size, diagonals)
             if maze._renderer:
                 maze._renderer.mark_full_redraw()
-            
+
             total_cells = sum(len(column) for column in maze._cells)
 
             self._queue_update(MazeGenerationUpdate(
@@ -86,19 +86,21 @@ class AsyncMazeGenerator(AsyncOperationManager[MazeGenerationUpdate]):
             ))
 
             # Now run the depth-first search algorithm incrementally
-            unvisited_cells = set([cell for column in maze._cells for cell in column])
+            unvisited_cells = set(
+                [cell for column in maze._cells for cell in column])
             stack: list[Cell] = []
             current = maze._cells[0][0]
             visited_count = 0
-            update_frequency = max(1, total_cells // 100)  # Update at least 100 times
+            # Update at least 100 times
+            update_frequency = max(1, total_cells // 100)
 
             while unvisited_cells and self._should_continue():
                 current.mark_as_open()
                 visited_count += 1
-                
+
                 neighbors = current.get_unvisited_neighbors()
                 visited_count += len(neighbors)
-                
+
                 if current in unvisited_cells:
                     unvisited_cells.remove(current)
                     visited_count += 1

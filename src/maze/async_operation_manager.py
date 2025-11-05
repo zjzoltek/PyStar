@@ -10,6 +10,7 @@ from abc import ABC
 
 UpdateType = TypeVar('UpdateType')
 
+
 class AsyncOperationManager(Generic[UpdateType], ABC):
     """
     Abstract base class for running operations asynchronously with queue-based updates.

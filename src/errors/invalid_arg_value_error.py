@@ -1,5 +1,6 @@
 from typing import override, Any, Collection
 
+
 class InvalidArgValueError(Exception):
     @override
     def __init__(self, expected: Collection[Any], received: Any, *args: object) -> None:
@@ -10,7 +11,7 @@ class InvalidArgValueError(Exception):
     @override
     def __str__(self):
         return f'Expected argument to be one of {self._expected}, got {self._received}'
-    
+
     @override
     def __repr__(self):
         return InvalidArgValueError.__name__ \

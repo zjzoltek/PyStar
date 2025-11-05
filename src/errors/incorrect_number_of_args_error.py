@@ -1,4 +1,5 @@
-from typing import override, Any
+from typing import override
+
 
 class IncorrectNumberOfArgsError(Exception):
     @override
@@ -6,7 +7,7 @@ class IncorrectNumberOfArgsError(Exception):
         super().__init__(args)
         self._expected = expected
         self._received = received
-        
+
     @override
     def __str__(self) -> str:
         return f'Expected ({self._expected}) arguments, got ({self._received})'

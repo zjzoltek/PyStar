@@ -3,17 +3,19 @@ from typing import Optional
 from models.cell import Cell
 
 type _Node = Node
+
+
 @dataclass(frozen=True)
 class Node:
     cell: Cell
     parent: Optional[_Node]
     gCost: float
     hCost: float
-    
+
     @property
     def fCost(self) -> float:
         return self.gCost + self.hCost
-    
+
     def __repr__(self) -> str:
         return repr(self.cell)
 

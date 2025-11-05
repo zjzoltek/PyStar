@@ -12,7 +12,8 @@ class InputHandler:
 
     def __init__(self) -> None:
         self._pressed_keys: Dict[int, Event] = {}
-        self._processed_keys: set[int] = set()  # Track keys already processed this frame cycle
+        # Track keys already processed this frame cycle
+        self._processed_keys: set[int] = set()
         self._drawing_mode: bool = False
         self._cursor_position: models.Point = models.Point(0, 0)
         self._last_cursor_position: Optional[models.Point] = None
