@@ -98,4 +98,4 @@ class Cell:
         return not self.__eq__(other)
 
     def __hash__(self) -> int:
-        return hash(self.__repr__())
+        return hash((self.x, self.y))

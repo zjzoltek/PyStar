@@ -1,20 +1,17 @@
-from dataclasses import dataclass
 from typing import Optional
 from models.cell import Cell
 
 type _Node = Node
 
-
-@dataclass(frozen=True)
 class Node:
-    cell: Cell
-    parent: Optional[_Node]
-    gCost: float
-    hCost: float
+    __slots__ = ('cell', 'parent', 'gCost', 'hCost', 'fCost')
 
-    @property
-    def fCost(self) -> float:
-        return self.gCost + self.hCost
+    def __init__(self, cell: Cell, parent: Optional[_Node], gCost: float, hCost: float):
+        self.cell = cell
+        self.parent = parent
+        self.gCost = gCost
+        self.hCost = hCost
+        self.fCost = gCost + hCost
 
     def __repr__(self) -> str:
         return repr(self.cell)
@@ -48,4 +45,4 @@ class Node:
         return not self == other
 
     def __hash__(self) -> int:
-        return hash(self.__repr__())
+        return hash(self.cell)
