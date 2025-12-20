@@ -46,8 +46,9 @@ def test_pathfinding_performance(iterations: int = 10, use_visualization: bool =
                 director._update_display()
 
         director._reset_maze_colors()
-        from a_star import PathFinder
-        path = PathFinder.find_path(director._path_endpoints, tick)
+        from maze.async_pathfinder import AsyncPathfinder
+        pathfinder = AsyncPathfinder()
+        path = pathfinder._run_pathfinding(director._path_endpoints, None)
 
         elapsed = time.perf_counter() - start_time
         total_time += elapsed

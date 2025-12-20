@@ -119,10 +119,20 @@ class Maze(ICellStateListener):
                     cell.mark_as_open()
 
     def get_random_transversible_point(self) -> Cell:
-        all_cells = [
-            row for row in self._cells for cell in row if cell.is_transversible()]
-        random.shuffle(all_cells)
-        return random.choice(random.choice(all_cells))
+        # Flatten the list of cells and filter for transversible ones
+        all_transversible_cells = [
+            cell for column in self._cells for cell in column if cell.is_transversible()
+        ]
+
+        if not all_transversible_cells:
+            # If no transversible cells, try to find any cell (fallback)
+            # This handles the case where the maze might be fully walled or uninitialized
+            all_cells = [cell for column in self._cells for cell in column]
+            if not all_cells:
+                raise ValueError("Maze has no cells")
+            return random.choice(all_cells)
+
+        return random.choice(all_transversible_cells)
 
     def get_cell(self, x: int, y: int) -> Cell | None:
         if not self._cells or self._cell_width == 0 or self._cell_height == 0:
