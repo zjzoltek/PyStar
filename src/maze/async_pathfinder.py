@@ -30,7 +30,11 @@ class AsyncPathfinder(AsyncOperationManager[PathfindingUpdate]):
         endpoints: models.PathEndpoints,
         on_complete: Optional[Callable]
     ) -> list[models.Node]:
-        assert endpoints.start and endpoints.end
+        # Capture endpoints locally to avoid race conditions if they are cleared
+        # or modified in the main thread while pathfinding is running
+        start_cell = endpoints.start
+        end_cell = endpoints.end
+        assert start_cell and end_cell
 
         from heapq import heappop, heappush
         from math import sqrt
@@ -44,10 +48,10 @@ class AsyncPathfinder(AsyncOperationManager[PathfindingUpdate]):
         closedlist: set[models.Cell] = set()
 
         current = models.Node(
-            cell=endpoints.start,
+            cell=start_cell,
             parent=None,
             gCost=0,
-            hCost=get_distance(endpoints.start, endpoints.end)
+            hCost=get_distance(start_cell, end_cell)
         )
         heappush(openlist, current)
 
@@ -55,7 +59,7 @@ class AsyncPathfinder(AsyncOperationManager[PathfindingUpdate]):
             current = heappop(openlist)
             closedlist.add(current.cell)
 
-            if current.cell == endpoints.end:
+            if current.cell == end_cell:
                 path: list[models.Node] = []
                 while current.parent is not None:
                     if not current.cell.is_terminator():
@@ -83,7 +87,7 @@ class AsyncPathfinder(AsyncOperationManager[PathfindingUpdate]):
                     continue
 
                 gcost = current.gCost + get_distance(current.cell, cell)
-                hcost = get_distance(cell, endpoints.end)
+                hcost = get_distance(cell, end_cell)
                 n = models.Node(cell, current, gcost, hcost)
                 heappush(openlist, n)
 
