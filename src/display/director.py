@@ -1,3 +1,4 @@
+import time
 import sys
 from typing import Final, Self
 
@@ -24,6 +25,7 @@ class Director:
         self._updates_per_frame = 5
         self._maze_generation_progress = 0.0
         self._maze_generation_message = ""
+        self._last_pathfinding_time = 0.0
 
     def set_visualization_mode(self, mode: str) -> None:
         """Set the active visualization mode."""
@@ -126,27 +128,40 @@ class Director:
     def _handle_key_events(self) -> None:
         # Use is_key_pressed_once for one-shot actions to prevent key repeat issues
         if self._input_handler.is_key_pressed_once(K_z):
-            self._input_handler.drawing_mode = not self._input_handler.drawing_mode
-            if self._input_handler.drawing_mode:
-                self._maze.reopen_cells(openable_only=False)
-            else:
-                self._generate_maze()
+            if not self._maze.is_pathfinding():
+                self._input_handler.drawing_mode = not self._input_handler.drawing_mode
+                if self._input_handler.drawing_mode:
+                    self._maze.reopen_cells(openable_only=False)
+                else:
+                    self._generate_maze()
 
         if self._input_handler.is_key_pressed_once(K_f):
+            # Prevent double activation if pathfinding is running or just finished
+            if self._maze.is_pathfinding():
+                return
+
+            # 0.5s debounce to prevent accidental double-clicks or ghost inputs
+            if time.time() - self._last_pathfinding_time < 0.5:
+                return
+
             self._path_endpoints.clear()
             self._run_pathfinding()
 
         if self._input_handler.is_key_pressed_once(K_p):
-            self._generate_random_start_end()
+            if not self._maze.is_pathfinding():
+                self._generate_random_start_end()
 
         if self._input_handler.is_key_pressed_once(K_m):
-            self._generate_maze()
+            if not self._maze.is_pathfinding():
+                self._generate_maze()
 
         if self._input_handler.is_key_pressed_once(K_c):
-            self._reset_maze_colors(include_start_end=True)
+            if not self._maze.is_pathfinding():
+                self._reset_maze_colors(include_start_end=True)
 
         if self._input_handler.is_key_pressed_once(K_x):
-            self._reset_maze_colors()
+            if not self._maze.is_pathfinding():
+                self._reset_maze_colors()
 
         if self._input_handler.is_key_pressed_once(K_SPACE):
             pos = self._input_handler.cursor_position
@@ -159,13 +174,21 @@ class Director:
                 self._maze.get_cell(event.pos[0], event.pos[1]))
 
     def _run_pathfinding(self) -> None:
+        if self._maze.is_pathfinding():
+            self._logger.warning("Pathfinding already running")
+            return
+
         self._reset_maze_colors()
 
         if not self._path_endpoints.is_complete():
             self._generate_random_start_end()
 
         self._maze.find_path_async(self._path_endpoints,
-                                   on_complete=lambda _: self._logger.debug(f'Pathfinding complete'))
+                                   on_complete=self._on_pathfinding_complete)
+
+    def _on_pathfinding_complete(self, path: list[models.Node] | None) -> None:
+        self._logger.debug('Pathfinding complete')
+        self._last_pathfinding_time = time.time()
 
     def _update_cursor_for_drawing_mode(self) -> None:
         if not self._input_handler.drawing_mode:
