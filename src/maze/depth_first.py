@@ -160,29 +160,28 @@ class Maze(ICellStateListener):
         h = int(self._height / cell_size.height)
         self._cell_width = cell_size.width
         self._cell_height = cell_size.height
-        self._cells = [[Cell(row, column, cell_size, self)
+
+        # Create cells: x=column, y=row
+        self._cells = [[Cell(column, row, cell_size, self)
                         for row in range(h)]
                        for column in range(w)]
 
-        for row in range(h):
-            for column in range(w):
-                u = (row - 1, column) if 0 <= row - 1 < h else None
-                d = (row + 1, column) if 0 <= row + 1 < h else None
-                r = (row, column + 1) if 0 <= column + 1 < w else None
-                l = (row, column - 1) if 0 <= column - 1 < w else None
+        for x in range(w):
+            for y in range(h):
+                # Calculate neighbor coordinates (x, y)
+                u = (x, y - 1) if y > 0 else None
+                d = (x, y + 1) if y < h - 1 else None
+                r = (x + 1, y) if x < w - 1 else None
+                l = (x - 1, y) if x > 0 else None
+
+                n = [u, d, l, r]
 
                 if diagonals:
-                    u_r = (row - 1, column + 1) if 0 <= row - \
-                        1 < h and 0 <= column + 1 < w else None
-                    d_r = (row + 1, column + 1) if 0 <= row + \
-                        1 < h and 0 <= column + 1 < w else None
-                    u_l = (row - 1, column - 1) if 0 <= row - \
-                        1 < h and 0 <= column - 1 < w else None
-                    d_l = (row + 1, column - 1) if 0 <= row + \
-                        1 < h and 0 <= column - 1 < w else None
-                    n = [u, d, l, r, u_r, d_r, u_l, d_l]
-                else:
-                    n = [u, d, l, r]
+                    u_r = (x + 1, y - 1) if y > 0 and x < w - 1 else None
+                    d_r = (x + 1, y + 1) if y < h - 1 and x < w - 1 else None
+                    u_l = (x - 1, y - 1) if y > 0 and x > 0 else None
+                    d_l = (x - 1, y + 1) if y < h - 1 and x > 0 else None
+                    n.extend([u_r, d_r, u_l, d_l])
 
-                self._cells[row][column].neighbors = [
+                self._cells[x][y].neighbors = [
                     self._cells[coords[0]][coords[1]] for coords in n if coords]
