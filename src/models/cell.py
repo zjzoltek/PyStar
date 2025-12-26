@@ -12,7 +12,7 @@ class ICellStateListener(Protocol):
         pass
 
 
-@dataclass
+@dataclass(slots=True)
 class Cell:
     x: int
     y: int
